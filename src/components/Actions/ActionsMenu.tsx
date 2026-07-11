@@ -122,20 +122,30 @@ interface PlayActionsProps {
 function PlayActions({disabled}: PlayActionsProps) {
     return (
         <>
-            <PopupMenuItem<Action>
-                label="Queue"
-                value={Action.Queue}
-                acceleratorKey="Enter"
-                disabled={disabled}
-                key={Action.Queue}
-            />
-            <PopupMenuItem<Action>
-                label="Play next"
-                value={Action.PlayNext}
-                acceleratorKey="Shift+Enter"
-                disabled={disabled}
-                key={Action.PlayNext}
-            />
+	      <PopupMenuItem<Action>
+		label="Queue"
+		value={Action.Queue}
+		acceleratorKey="Enter"
+		disabled={disabled}
+		key={Action.Queue}
+	      />
+
+	     <PopupMenuItem<Action>
+		label="Replace Queue"
+		value={Action.ReplaceQueue}
+	        acceleratorKey="Alt+Enter"
+		disabled={disabled}
+	        key={Action.ReplaceQueue}
+	     />
+
+	     <PopupMenuItem<Action>
+	        label="Play next"
+         	value={Action.PlayNext}
+	        acceleratorKey="Shift+Enter"
+		disabled={disabled}
+	        key={Action.PlayNext}
+	    />
+
             <PopupMenuItem<Action>
                 label="Play now"
                 value={Action.PlayNow}

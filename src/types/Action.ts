@@ -11,6 +11,7 @@ const enum Action {
     PlayNow = 'play-now',
     PlayNext = 'play-next',
     Queue = 'queue',
+    ReplaceQueue = 'replace-queue',
     AddToPlaylist = 'add-to-playlist',
     AddToNewPlaylist = 'add-to-new-playlist',
     AddToRecentPlaylist1 = 'add-to-recent-playlist-1',
