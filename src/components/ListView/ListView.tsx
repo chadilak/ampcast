@@ -101,7 +101,7 @@ export interface ListViewProps<T> {
     onDrop?: (items: readonly T[] | readonly File[] | DataTransferItem, atIndex: number) => void;
     onMove?: (items: readonly T[], toIndex: number) => void;
     onDelete?: (items: readonly T[]) => void;
-    onEnter?: (items: readonly T[], cmdKey: boolean, shiftKey: boolean) => void;
+    onEnter?: (items: readonly T[], cmdKey: boolean, shiftKey: boolean, altKey: boolean) => void;
     onInfo?: (items: readonly T[]) => void;
     onReorderCols?: (col: Column<T>, toIndex: number) => void;
     onRowIndexChange?: (rowIndex: number) => void;
@@ -338,7 +338,7 @@ export default function ListView<T>({
             .subscribe((event) => {
                 event.stopPropagation();
                 if (!event.repeat) {
-                    onEnter?.(selectedItems, event[browser.cmdKey], event.shiftKey);
+                    onEnter?.(selectedItems, event[browser.cmdKey], event.shiftKey, event.altKey);
                 }
             });
         return () => subscription.unsubscribe();
