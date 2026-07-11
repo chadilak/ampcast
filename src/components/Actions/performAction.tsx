@@ -41,6 +41,23 @@ export default async function performAction<T extends MediaObject>(
             performPlayAction(action, items);
             break;
 
+	case Action.ReplaceQueue: {
+   	 const itemType = item.itemType;
+    	if (
+        itemType === ItemType.Media ||
+        itemType === ItemType.Album ||
+        itemType === ItemType.Playlist
+    	) {
+        playlist.clear();
+        if (itemType === ItemType.Media) {
+            await playlist.add(items as readonly MediaItem[]);
+        } else {
+            await playlist.add(item);
+        }
+    }
+    break;
+}    
+
         case Action.Rate:
         case Action.AddToLibrary:
         case Action.RemoveFromLibrary:
