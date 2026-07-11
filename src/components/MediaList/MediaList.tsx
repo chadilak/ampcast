@@ -209,21 +209,23 @@ export default function MediaList<T extends MediaObject>({
     );
 
     const handleEnter = useCallback(
-        (items: readonly T[], cmdKey: boolean, shiftKey: boolean) => {
-            if (items.every(isPlayable)) {
-                if (!cmdKey && !shiftKey) {
-                    performAction(Action.Queue, items);
-                } else if (cmdKey && !shiftKey) {
-                    performAction(Action.PlayNow, items);
-                } else if (shiftKey && !cmdKey) {
-                    performAction(Action.PlayNext, items);
-                }
-            } else {
-                onEnter?.(items, cmdKey, shiftKey);
+    (items: readonly T[], cmdKey: boolean, shiftKey: boolean, altKey: boolean) => {
+        if (items.every(isPlayable)) {
+            if (!cmdKey && !shiftKey && !altKey) {
+                performAction(Action.Queue, items);
+            } else if (cmdKey && !shiftKey) {
+                performAction(Action.PlayNow, items);
+            } else if (shiftKey && !cmdKey) {
+                performAction(Action.PlayNext, items);
+            } else if (altKey && !cmdKey && !shiftKey) {
+                performAction(Action.ReplaceQueue, items);
             }
-        },
-        [onEnter, isPlayable]
-    );
+        } else {
+            onEnter?.(items, cmdKey, shiftKey, altKey);
+        }
+    },
+    [onEnter, isPlayable]
+);
 
     const handleInfo = useCallback((items: readonly T[]) => {
         performAction(Action.Info, items);
