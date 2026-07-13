@@ -7,5 +7,7 @@ export default interface Preferences {
     markExplicitContent: boolean;
     mediaInfoTabs: boolean;
     miniPlayer: boolean;
+    showAppTitle: boolean;
+    showSmiley: boolean;
     spacebarTogglePlay: boolean;
 }

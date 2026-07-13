@@ -1,0 +1,33 @@
+{
+    "name": "Noctalia",
+    "fontName": "Monospace",
+    "frame": {
+        "color": "#0c0c27",
+        "textColor": "#fff59b"
+    },
+    "content": {
+        "color": "#070722",
+        "textColor": "#f3edf7"
+    },
+    "selected": {
+        "color": "#fff59b",
+        "textColor": "#0e0e43"
+    },
+    "button": {
+        "color": "#17173c",
+        "textColor": "#fff59b",
+        "borderWidth": 0
+    },
+    "mediaButton": {
+        "color": "#fff59b",
+        "textColor": "#0e0e43"
+    },
+    "scrollbar": {
+        "color": "#070722",
+        "textColor": "#fff59b",
+        "size": 0.6
+    },
+    "spacing": 0.15,
+    "roundness": 1,
+    "flat": true
+}

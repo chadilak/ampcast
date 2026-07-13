@@ -55,6 +55,22 @@ const preferences: Preferences = {
         storage.setBoolean('miniPlayer', enabled);
     },
 
+    get showAppTitle(): boolean {
+        return storage.getBoolean('showAppTitle', true);
+    },
+
+    set showAppTitle(enabled: boolean) {
+        storage.setBoolean('showAppTitle', enabled);
+    },
+
+    get showSmiley(): boolean {
+        return storage.getBoolean('showSmiley', true);
+    },
+
+    set showSmiley(enabled: boolean) {
+        storage.setBoolean('showSmiley', enabled);
+    },
+
     get spacebarTogglePlay(): boolean {
         return storage.getBoolean('spacebarTogglePlay');
     },
