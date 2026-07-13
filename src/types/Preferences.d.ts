@@ -8,5 +8,7 @@ export default interface Preferences {
     linkBehavior: LinkBehavior;
     markExplicitContent: boolean;
     miniPlayer: boolean;
+    showAppTitle: boolean;
+    showSmiley: boolean;
     spacebarTogglePlay: boolean;
 }

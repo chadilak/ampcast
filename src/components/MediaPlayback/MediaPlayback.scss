@@ -6,8 +6,11 @@
             top: max(1.5rem, 32px);
         }
 
-        .electron & {
-            top: env(titlebar-area-height, 1.5rem);
-        }
+.electron & {
+    top: env(titlebar-area-height, 10px);
+}
+.electron.show-app-title & {
+    top: env(titlebar-area-height, 28px);
+}
     }
 }
