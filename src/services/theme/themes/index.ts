@@ -9,6 +9,7 @@ import debug from './debug.json';
 import glacier from './glacier.json';
 import mellowyellow from './mellowyellow.json';
 import moodyblue from './moodyblue.json';
+import noctalia from './noctalia.json';
 import notebook from './notebook.json';
 import palepink from './palepink.json';
 import polymer from './polymer.json';
@@ -48,6 +49,7 @@ const themes = [
     glacier,
     mellowyellow,
     moodyblue,
+    noctalia,
     notebook,
     palepink,
     polymer,

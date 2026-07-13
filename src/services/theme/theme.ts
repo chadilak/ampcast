@@ -71,6 +71,15 @@ class MainTheme implements CurrentTheme {
             .subscribe(logger);
 
         this.load();
+        window.addEventListener('noctalia-theme-update', () => {
+            if (this.name === 'Noctalia') {
+                const raw = localStorage.getItem('ampcast/theme/noctalia-live');
+                if (raw) {
+                    localStorage.setItem('ampcast/theme/current', raw);
+                }
+                this.load();
+            }
+        });
     }
 
     observe(): Observable<CurrentTheme> {
