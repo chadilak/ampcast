@@ -10,5 +10,7 @@ export default interface AmpcastElectron {
     getLocalhostIP(): Promise<string>;
     getPreferredPort(): Promise<number>;
     setPreferredPort(port: number): Promise<void>;
+    minimize(): void;
+    toggleMaximize(): void;
     quit(): void;
 }

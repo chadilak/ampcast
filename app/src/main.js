@@ -17,6 +17,8 @@ import unhandled from 'electron-unhandled';
 import windowStateKeeper from 'electron-window-state';
 import Store from 'electron-store';
 import path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
 import {__dirname} from './config.js';
 import server from './server.js';
 import store from './store.js';
@@ -27,7 +29,6 @@ const {autoUpdater} = electronUpdater;
 unhandled();
 
 if (!app.requestSingleInstanceLock()) {
-    // Prevent multiple instances of the app
     app.quit();
 }
 
@@ -79,19 +80,13 @@ async function createMainWindow(url, mainWindowState) {
         minHeight: 600,
         icon: appIcon,
         backgroundColor: '#32312f',
-        titleBarStyle: 'hidden',
-        titleBarOverlay: {
-            color: 'rgba(0,0,0,0)',
-            symbolColor: 'white',
-            height: 24,
-        },
+        frame: false,
         webPreferences: {
             devTools: true,
             preload: path.join(__dirname, 'preload.js'),
         },
     });
 
-    // Open links in the default browser.
     mainWindow.webContents.setWindowOpenHandler(({url}) => {
         if (url === `http://localhost:${server.port}/#mini-player`) {
             return {
@@ -99,11 +94,6 @@ async function createMainWindow(url, mainWindowState) {
                 overrideBrowserWindowOptions: {
                     backgroundColor: '#32312f',
                     titleBarStyle: 'hidden',
-                    titleBarOverlay: {
-                        color: 'rgba(0,0,0,0)',
-                        symbolColor: 'white',
-                        height: 24,
-                    },
                     minimizable: false,
                     maximizable: false,
                     alwaysOnTop: true,
@@ -135,35 +125,45 @@ async function createMainWindow(url, mainWindowState) {
     mainWindow.show();
 }
 
+function watchNoctaliaTheme() {
+    const themePath = path.join(os.homedir(), '.config', 'ampcast', 'Themes', 'noctalia.json');
+    function applyTheme() {
+        try {
+            const raw = fs.readFileSync(themePath, 'utf8');
+            JSON.parse(raw);
+            mainWindow?.webContents.send('noctalia-theme', raw);
+        } catch (e) {
+            console.error('[Noctalia] Failed to read theme file:', e.message);
+        }
+    }
+    mainWindow.webContents.once('did-finish-load', () => setTimeout(applyTheme, 200));
+    fs.watchFile(themePath, {persistent: false, interval: 1000}, (curr, prev) => {
+        if (curr.mtimeMs !== prev.mtimeMs) applyTheme();
+    });
+}
+
 function createBridge() {
     ipcMain.on('quit', () => app.quit());
+    ipcMain.on('minimize', () => mainWindow?.minimize());
+    ipcMain.on('toggleMaximize', () => {
+        if (mainWindow?.isMaximized()) mainWindow.unmaximize();
+        else mainWindow?.maximize();
+    });
+    ipcMain.on('setFrameColor', (_color) => {});
+    ipcMain.on('setFrameTextColor', (_symbolColor) => {});
+    ipcMain.on('setFontSize', (_fontSize) => {});
 
-    // Synch the window chrome with the app theme.
-    ipcMain.on('setFrameColor', (_, color) => {
-        mainWindow?.setTitleBarOverlay?.({color});
-    });
-    ipcMain.on('setFrameTextColor', (_, symbolColor) => {
-        mainWindow?.setTitleBarOverlay?.({symbolColor});
-    });
-    ipcMain.on('setFontSize', (_, fontSize) => {
-        const dragRegionRemSize = 1.5; // defined in web client CSS
-        const height = Math.max(Math.round(fontSize * dragRegionRemSize), 24);
-        mainWindow?.setTitleBarOverlay?.({height});
-    });
-
-    // Server address.
     ipcMain.handle('getLocalhostIP', () => {
         return server.address;
     });
 
-    // Preferred port.
     ipcMain.handle('getPreferredPort', () => {
         return store.port;
     });
     ipcMain.handle('setPreferredPort', async (_, newPort) => {
         const parsedPort = parseInt(newPort, 10);
         if (parsedPort) {
-            store.port = parsedPort; // possibly confirmation of change of port from the ui
+            store.port = parsedPort;
             if (server.port !== parsedPort) {
                 await server.stop();
                 const port = await server.start();
@@ -175,7 +175,6 @@ function createBridge() {
         }
     });
 
-    // Credentials.
     const credentials = new Store({
         name: 'ampcast-credentials',
     });
@@ -195,7 +194,6 @@ function createBridge() {
         credentials.clear();
     });
 
-    // System audio.
     ipcMain.handle('enable-loopback-audio', () => {
         mainWindow?.webContents.session.setDisplayMediaRequestHandler(async (_, callback) => {
             if (isMac()) {
@@ -261,10 +259,10 @@ app.whenReady().then(async () => {
         createBridge();
 
         await createMainWindow(url, mainWindowState);
+        watchNoctaliaTheme();
         splash.destroy();
         await checkForUpdatesAndNotify();
 
-        // For macOS.
         app.on('activate', async () => {
             if (BrowserWindow.getAllWindows().length === 0) {
                 if (!mainWindow) {

@@ -10,6 +10,7 @@ import usePaused from 'hooks/usePaused';
 import usePlaybackState from 'hooks/usePlaybackState';
 import useThrottledValue from 'hooks/useThrottledValue';
 import {MediaControlsProps} from './MediaControls';
+import preferences from 'services/preferences';
 
 const storage = new LiteStorage('currentTimeControl', 'session');
 
@@ -88,7 +89,7 @@ export default function TimeControl({overlay}: MediaControlsProps) {
             />
             <input
                 id={overlay ? undefined : 'playhead'}
-                className={!overlay && !paused && elapsedTime >= 1 ? 'smile' : undefined}
+                className={!overlay && !paused && elapsedTime >= 1 && preferences.showSmiley ? 'smile' : undefined}
                 type="range"
                 aria-label="Seek"
                 min={0}

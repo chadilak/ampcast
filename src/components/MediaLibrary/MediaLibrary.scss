@@ -24,6 +24,10 @@
 
         .electron & {
             @include chromeless;
+            min-height: env(titlebar-area-height, 5px);
+        }
+        .electron.show-app-title & {
+            min-height: env(titlebar-area-height, 28px);
         }
 
         .electron-mac & {
@@ -32,7 +36,7 @@
             }
         }
 
-        .icon-button-settings {            
+        .icon-button-settings {
             flex: initial;
             margin: 0 calc(var(--gutter-width) + 0.25rem) 0 auto;
             outline-offset: 3px;
