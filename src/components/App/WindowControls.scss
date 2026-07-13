@@ -1,0 +1,40 @@
+.window-controls {
+    position: fixed;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    -webkit-app-region: no-drag;
+    z-index: 9999;
+
+    .window-control {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border: none;
+        background: transparent;
+        color: var(--frame-text-color);
+        font-size: 1rem;
+        cursor: pointer;
+        opacity: 0.7;
+        position: relative;
+        z-index: 9999;
+        transition:
+            opacity 0.15s,
+            background 0.15s;
+
+        &:hover {
+            opacity: 1;
+            background: var(--frame2-color);
+        }
+
+        &-close:hover {
+            background: #c42b1c;
+            color: #fff;
+            opacity: 1;
+        }
+    }
+}

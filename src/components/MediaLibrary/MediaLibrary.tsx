@@ -12,6 +12,9 @@ import {TreeViewHandle} from 'components/TreeView';
 import useHistory from 'components/MediaBrowser/useHistory';
 import {ResizeRect} from 'hooks/useOnResize';
 import SettingsButton from './SettingsButton';
+import WindowControls from 'components/App/WindowControls';
+import preferences, {observePreferences} from 'services/preferences';
+import useObservable from 'hooks/useObservable';
 import './MediaLibrary.scss';
 
 export default memo(function MediaLibrary() {
@@ -19,6 +22,7 @@ export default memo(function MediaLibrary() {
     const sourcesRef = useRef<TreeViewHandle>(null);
     const {currentPath, navigateTo, switchLibrary} = useHistory();
     const service = getServiceFromPath(currentPath);
+    const {showAppTitle} = useObservable(observePreferences, {...preferences});
 
     useEffect(() => {
         const [path] = currentPath.split('?');
@@ -37,6 +41,21 @@ export default memo(function MediaLibrary() {
         }
     }, [service, switchLibrary]);
 
+    useEffect(() => {
+        document.body.classList.toggle('show-app-title', showAppTitle);
+    }, [showAppTitle]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key === 'm') {
+                e.preventDefault();
+                preferences.showAppTitle = !preferences.showAppTitle;
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     const handleSourcesResize = useCallback(({width}: ResizeRect) => {
         ref.current?.style.setProperty('--sources-width', `${width}px`);
     }, []);
@@ -44,11 +63,12 @@ export default memo(function MediaLibrary() {
     return (
         <div className="media-library" ref={ref}>
             <header className="media-library-head">
-                <AppTitle />
+                {showAppTitle && <AppTitle />}
                 <AppDragRegion />
                 {WEB_LINKS ? <BrowserControls /> : null}
                 <SettingsButton />
             </header>
+            {showAppTitle && <WindowControls />}
             <div className="media-library-body">
                 <Splitter id="media-library-layout" arrange="columns">
                     <MediaSources
