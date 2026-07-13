@@ -1,8 +1,11 @@
-import React from 'react';
+import React, {useCallback} from 'react';
 import {ListViewHandle} from 'components/ListView';
 import {IconButtons} from 'components/Button';
+import {SettingsDialog} from 'components/Settings';
+import {showDialog} from 'components/Dialog';
 import useCurrentlyPlaying from 'hooks/useCurrentlyPlaying';
 import usePlaybackState from 'hooks/usePlaybackState';
+import MediaButton from './MediaButton';
 import MediaButtons from './MediaButtons';
 import PlaylistMenuButton from './PlaylistMenuButton';
 import RadioButtons from './RadioButtons';
@@ -19,6 +22,10 @@ export interface MediaControlsProps {
 export default function MediaControls({overlay, playlistRef}: MediaControlsProps) {
     const currentlyPlaying = useCurrentlyPlaying();
     const {paused} = usePlaybackState();
+
+    const openSettingsDialog = useCallback(() => {
+        showDialog(SettingsDialog, true);
+    }, []);
 
     return (
         <div className={`media-controls${overlay ? '-overlay' : ''}`}>
@@ -41,7 +48,17 @@ export default function MediaControls({overlay, playlistRef}: MediaControlsProps
                         <MediaButtons overlay={overlay} playlistRef={playlistRef} />
                     </div>
                 )}
-                {!overlay && playlistRef ? <PlaylistMenuButton playlistRef={playlistRef} /> : null}
+                {!overlay && playlistRef ? (
+                    <div className="media-controls-menu">
+                        <MediaButton
+                            title="Settings"
+                            icon="settings"
+                            className="media-button-menu"
+                            onClick={openSettingsDialog}
+                        />
+                        <PlaylistMenuButton playlistRef={playlistRef} />
+                    </div>
+                ) : null}
             </div>
         </div>
     );

@@ -7,11 +7,20 @@
     .playback-control,
     .volume-control,
     .media-buttons,
-    .media-buttons-menu {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
+    .media-buttons-menu,
+    .media-controls-menu {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+}
+
+    .media-controls-menu {
+        gap: 0.35em;
+
+    .media-button-menu .icon {
+        display: block;
     }
+}
 
     .volume-control {
         flex: auto;
