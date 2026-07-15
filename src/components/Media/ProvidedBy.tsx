@@ -14,7 +14,7 @@ export default function ProvidedBy({item}: {item: MediaItem | null}) {
             <MediaSourceLabel
                 className="provided-by"
                 icon={service.icon}
-                text={`Provided by ${service.name}`}
+                text={`${service.name}`}
             />
         );
     } else {
