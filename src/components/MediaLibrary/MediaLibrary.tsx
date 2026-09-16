@@ -12,7 +12,6 @@ import Splitter from 'components/Splitter';
 import {TreeViewHandle} from 'components/TreeView';
 import useHistory from 'components/MediaBrowser/useHistory';
 import {ResizeRect} from 'hooks/useOnResize';
-import SettingsButton from './SettingsButton';
 import WindowControls from 'components/App/WindowControls';
 import preferences, {observePreferences} from 'services/preferences';
 import useObservable from 'hooks/useObservable';
@@ -67,7 +66,6 @@ export default memo(function MediaLibrary() {
                 {showAppTitle && <AppTitle />}
                 <AppDragRegion />
                 {WEB_LINKS && browser.isElectron ? <BrowserControls /> : null}
-                <SettingsButton />
             </header>
             {showAppTitle && <WindowControls />}
             <div className="media-library-body">
