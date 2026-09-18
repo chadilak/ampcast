@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import MediaAlbum from 'types/MediaAlbum';
 import MediaArtist from 'types/MediaArtist';
 import MediaItemList from 'components/MediaList/MediaItemList';
@@ -7,24 +7,14 @@ import {albumTracksLayout} from 'components/MediaList/layouts';
 import AlbumList from 'components/MediaList/AlbumList';
 import ArtistList from 'components/MediaList/ArtistList';
 import Splitter from 'components/Splitter';
-import useSyntheticAlbumSource from 'components/MediaBrowser/useSyntheticAlbumSource';
 import {PagedItemsProps} from './PagedItems';
 
-export default function Artists({source, ...props}: PagedItemsProps<MediaArtist>) {
+export default function Artists({service, source, ...props}: PagedItemsProps<MediaArtist>) {
     const [[selectedArtist], setSelectedArtist] = useState<readonly MediaArtist[]>([]);
     const [[selectedAlbum], setSelectedAlbum] = useState<readonly MediaAlbum[]>([]);
     const [error, setError] = useState<unknown>();
     const albumsPager = selectedArtist?.pager || null;
     const tracksPager = selectedAlbum?.pager || null;
-    const [tracksSource, setTracksSource, clearTracksSource] = useSyntheticAlbumSource();
-
-    useEffect(() => {
-        setTracksSource(source, selectedAlbum);
-    }, [setTracksSource, source, selectedAlbum]);
-
-    useEffect(() => {
-        return () => clearTracksSource(); // Teardown.
-    }, [clearTracksSource]);
 
     const artistList = (
         <ArtistList
@@ -55,7 +45,7 @@ export default function Artists({source, ...props}: PagedItemsProps<MediaArtist>
             className={`album-tracks ${selectedAlbum?.synthetic ? 'synthetic' : ''} ${selectedAlbum?.multiDisc ? 'multi-disc' : ''}`}
             parent={selectedAlbum}
             pager={tracksPager}
-            source={tracksSource || source}
+            source={source}
             defaultLayout={albumTracksLayout}
             level={3}
             key={selectedAlbum?.src}
@@ -72,7 +62,13 @@ export default function Artists({source, ...props}: PagedItemsProps<MediaArtist>
     return (
         <div className="panel">
             {source.singular ? (
-                <MediaObjectBrowser item={selectedArtist} itemList={artistList} error={error}>
+                <MediaObjectBrowser
+                    service={service}
+                    source={source}
+                    item={selectedArtist}
+                    itemList={artistList}
+                    error={error}
+                >
                     {albumsAndTracks}
                 </MediaObjectBrowser>
             ) : source.secondaryItems?.layout?.view === 'none' ? (

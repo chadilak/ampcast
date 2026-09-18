@@ -88,7 +88,6 @@ export const otherTracksLayout: MediaListLayout = {
 
 export const radiosLayout: MediaListLayout = {
     view: 'card small',
-    views: [],
     card: {h1: 'Name'},
     details: ['Name'],
     extraFields: [],

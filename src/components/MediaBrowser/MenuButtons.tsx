@@ -36,14 +36,13 @@ export default function MenuButtons<T extends MediaObject>({
         async (button: HTMLButtonElement) => {
             const {right, bottom} = button.getBoundingClientRect();
             await showMediaSourceMenu({
-                source,
                 isSearch,
                 target: button,
                 x: right,
                 y: bottom + 4,
             });
         },
-        [source, isSearch]
+        [isSearch]
     );
 
     return (

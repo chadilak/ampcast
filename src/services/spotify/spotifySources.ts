@@ -14,7 +14,7 @@ import Pager, {PagerConfig} from 'types/Pager';
 import Pin, {Pinnable} from 'types/Pin';
 import {exists, getItemTypeFromSrc, getMediaObjectId, partition} from 'utils';
 import {NoSpotifyChartsError} from 'services/errors';
-import {createMediaSourceFromObject} from 'services/mediaServices/mediaSources';
+import {createSingularMediaSource} from 'services/mediaServices/mediaSources';
 import SimplePager from 'services/pagers/SimplePager';
 import {setHiddenSources} from 'services/mediaServices/servicesSettings';
 import {
@@ -58,14 +58,14 @@ export function createSourceFromObject<T extends MediaObject>(src: string): Medi
     const itemType = getItemTypeFromSrc(src);
     switch (itemType) {
         case ItemType.Playlist:
-            return createMediaSourceFromObject<MediaPlaylist>({
+            return createSingularMediaSource<MediaPlaylist>({
                 src,
                 itemType,
                 secondaryItems: spotifyPlaylistItems,
             }) as MediaSource<T>;
 
         default:
-            return createMediaSourceFromObject<T>({
+            return createSingularMediaSource<T>({
                 src,
                 itemType,
             });

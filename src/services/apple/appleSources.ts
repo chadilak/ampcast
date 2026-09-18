@@ -17,12 +17,13 @@ import Pager, {PagerConfig} from 'types/Pager';
 import Pin, {Pinnable} from 'types/Pin';
 import {exists, getItemTypeFromSrc} from 'utils';
 import {NoFavoritesPlaylistError} from 'services/errors';
-import {createMediaSourceFromObject} from 'services/mediaServices/mediaSources';
+import {createSingularMediaSource} from 'services/mediaServices/mediaSources';
 import SimplePager from 'services/pagers/SimplePager';
 import {t} from 'services/i18n';
 import {songChartsLayout} from 'components/MediaList/layouts';
 import MusicKitPager, {MusicKitPage} from './MusicKitPager';
 import MusicKitRecentlyPlayedPager from './MusicKitRecentlyPlayedPager';
+import {createRelationshipPager} from './musicKitUtils';
 import appleSettings from './appleSettings';
 
 const serviceId: MediaServiceId = 'apple';
@@ -61,18 +62,43 @@ const appleLibrarySort: MediaListSort = {
 
 export function createSourceFromObject<T extends MediaObject>(src: string): MediaSource<T> {
     const itemType = getItemTypeFromSrc(src);
-    return createMediaSourceFromObject<T>({
+    return createSingularMediaSource<T>({
         src,
         itemType,
     });
 }
 
 export function createSourceFromPin<T extends Pinnable>(pin: Pin): MediaSource<T> {
-    return createMediaSourceFromObject<MediaPlaylist>({
+    return createSingularMediaSource<MediaPlaylist>({
         src: pin.src,
         itemType: ItemType.Playlist,
         isPin: true,
     }) as MediaSource<T>;
+}
+
+export function createRelatedPlaylistsSource<T extends MediaObject>(
+    item: T
+): MediaSource<MediaPlaylist> | null {
+    const catalogId = item.apple?.catalogId;
+    if (!catalogId) {
+        return null;
+    }
+    switch (item.itemType) {
+        case ItemType.Artist:
+            return {
+                id: `${serviceId}/playlists`,
+                title: 'Related Playlists',
+                icon: 'playlist',
+                itemType: ItemType.Playlist,
+
+                search(): Pager<MediaPlaylist> {
+                    return createRelationshipPager('artists', catalogId, 'playlists');
+                },
+            };
+
+        default:
+            return null;
+    }
 }
 
 export const appleSearch: MediaMultiSource = {
@@ -173,6 +199,7 @@ const appleRecentlyPlayed: MediaSource<MediaItem> = {
 
 const appleLibrarySongs: MediaSource<MediaItem> = {
     id: `${serviceId}/library-songs`,
+    sourceId: `${serviceId}/songs`,
     title: 'My Songs',
     icon: 'tick',
     itemType: ItemType.Media,
@@ -203,6 +230,7 @@ const appleLibrarySongs: MediaSource<MediaItem> = {
 
 const appleLibraryAlbums: MediaSource<MediaAlbum> = {
     id: `${serviceId}/library-albums`,
+    sourceId: `${serviceId}/albums`,
     title: 'My Albums',
     icon: 'tick',
     itemType: ItemType.Album,
@@ -231,6 +259,7 @@ const appleLibraryAlbums: MediaSource<MediaAlbum> = {
 
 const appleLibraryArtists: MediaSource<MediaArtist> = {
     id: `${serviceId}/library-artists`,
+    sourceId: `${serviceId}/artists`,
     title: 'My Artists',
     icon: 'tick',
     itemType: ItemType.Artist,
@@ -262,6 +291,7 @@ const appleLibraryArtists: MediaSource<MediaArtist> = {
 
 const appleLibraryPlaylists: MediaSource<MediaPlaylist> = {
     id: `${serviceId}/playlists`,
+    sourceId: `${serviceId}/playlists`,
     title: 'My Playlists',
     icon: 'tick',
     itemType: ItemType.Playlist,
@@ -302,6 +332,7 @@ export const appleEditablePlaylists: MediaSource<MediaPlaylist> = {
 
 const appleLibraryVideos: MediaSource<MediaItem> = {
     id: `${serviceId}/library-videos`,
+    sourceId: `${serviceId}/videos`,
     title: 'My Videos',
     icon: 'tick',
     itemType: ItemType.Media,
@@ -631,6 +662,7 @@ function createRecommendations<T extends MediaObject>(
         itemType,
         linearType: (type === 'stations' ? LinearType.Station : undefined) as any,
         id: `${serviceId}/recommendations/${props.id}`,
+        sourceId: `${serviceId}/${type}`,
         icon: 'star',
 
         search(): Pager<T> {
@@ -671,6 +703,7 @@ function createSearch<T extends MediaObject>(
     return {
         ...props,
         id: `${serviceId}/search/${type}`,
+        sourceId: type === 'songs' ? undefined : `${serviceId}/${type}`,
         icon: 'search',
 
         search({q = ''}: {q?: string} = {}): Pager<T> {

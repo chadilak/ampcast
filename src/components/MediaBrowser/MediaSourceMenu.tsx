@@ -1,8 +1,9 @@
 import React from 'react';
 import ItemType from 'types/ItemType';
+import MediaAlbum from 'types/MediaAlbum';
 import MediaSource from 'types/MediaSource';
 import {getMediaLabel} from 'utils';
-import {getSourceItems} from 'services/mediaServices/mediaSources'
+import {getMediaListId, getMediaSourceItems} from 'services/mediaServices/mediaSources';
 import {
     getSourceSorting,
     setSourceView,
@@ -16,10 +17,10 @@ import PopupMenu, {
     PopupMenuSeparator,
     showPopupMenu,
 } from 'components/PopupMenu';
-import useSyntheticAlbumSource from './useSyntheticAlbumSource';;
+import useActiveSource from './useActiveSource';
+import useSyntheticAlbum from './useSyntheticAlbum';
 
 interface ShowMediaSourceMenuParams {
-    source: MediaSource;
     target: HTMLElement;
     x: number;
     y: number;
@@ -41,31 +42,35 @@ export async function showMediaSourceMenu({
     );
 }
 
-export type MediaSourceMenuProps = Pick<ShowMediaSourceMenuParams, 'source' | 'isSearch'>;
+export type MediaSourceMenuProps = Pick<ShowMediaSourceMenuParams, 'isSearch'>;
 
-function MediaSourceMenu({source, isSearch, ...props}: PopupMenuProps & MediaSourceMenuProps) {
+function MediaSourceMenu({isSearch, ...props}: PopupMenuProps & MediaSourceMenuProps) {
     return (
         <PopupMenu {...props}>
-            <MediaSourceMenuItems source={source} isSearch={isSearch} />
+            <MediaSourceMenuItems isSearch={isSearch} />
         </PopupMenu>
     );
 }
 
-export function MediaSourceMenuItems({source, isSearch}: MediaSourceMenuProps) {
-    const [syntheticAlbumSource] = useSyntheticAlbumSource();
-    const primaryMenuItems = getMenuItems(source, 1, source.itemType, isSearch);
+export function MediaSourceMenuItems({isSearch}: MediaSourceMenuProps) {
+    const [source] = useActiveSource();
+    const [syntheticAlbum] = useSyntheticAlbum();
+    if (!source) {
+        return;
+    }
+    const primaryMenuItems = getMenuItems(source, 1, source.itemType, syntheticAlbum, isSearch);
     let secondaryMenuItems: MenuItems | undefined;
     let tertiaryMenuItems: MenuItems | undefined;
     if (source.singular && source.itemType === ItemType.Media) {
-        secondaryMenuItems = getMenuItems(source, 2, ItemType.Media);
+        secondaryMenuItems = getMenuItems(source, 2, ItemType.Media, syntheticAlbum);
     } else if (
         source.secondaryItems?.layout?.view !== 'none' &&
         source.itemType !== ItemType.Media
     ) {
         const itemType = source.itemType === ItemType.Artist ? ItemType.Album : ItemType.Media;
-        secondaryMenuItems = getMenuItems(source, 2, itemType);
+        secondaryMenuItems = getMenuItems(source, 2, itemType, syntheticAlbum);
         if (source.tertiaryItems?.layout?.view !== 'none' && source.itemType === ItemType.Artist) {
-            tertiaryMenuItems = getMenuItems(syntheticAlbumSource || source, 3, ItemType.Media);
+            tertiaryMenuItems = getMenuItems(source, 3, ItemType.Media, syntheticAlbum);
         }
     }
     if (secondaryMenuItems) {
@@ -117,10 +122,11 @@ function getMenuItems(
     source: MediaSource<any>,
     level: 1 | 2 | 3,
     itemType: ItemType,
+    syntheticAlbum?: MediaAlbum,
     isSearch?: boolean
 ): MenuItems {
-    const id = `${source.sourceId || source.id}/${level}`;
-    const items = getSourceItems(source, level);
+    const id = getMediaListId(source, level, syntheticAlbum);
+    const items = getMediaSourceItems(source, level, syntheticAlbum);
     const menuItems: MenuItems = {
         label: items.label || getDefaultLabel(source.id, itemType),
     };
@@ -164,7 +170,7 @@ function getMenuItems(
         }
     }
     const views = items.layout?.views || ['card', 'card compact', 'card small', 'details'];
-    const listView = document.getElementById(id);
+    const listView = document.querySelector<HTMLElement>(`[data-list-id="${id}"]`);
     const currentView = listView?.dataset.view;
     menuItems.view = views.length ? (
         <PopupMenuItemGroup>

@@ -56,7 +56,6 @@ function Scrollbar({
     const trackRef = useRef<HTMLDivElement>(null);
     const thumbRef = useRef<HTMLDivElement>(null);
     const {position, max, clientSize, scrollSize, resize, scrollBy, scrollTo} = useScrollbarState();
-    const [size, setSize] = useState(0);
     const [trackSize, setTrackSize] = useState(0);
     const [thumbSize, setThumbSize] = useState(0);
     const [dragStart, setDragStart] = useState(-1);
@@ -101,15 +100,13 @@ function Scrollbar({
         }
     }, [position, onChange, smallChange]);
 
-    useEffect(() => {
-        onResize?.(size);
-    }, [size, onResize]);
-
     useOnResize(
         trackRef,
         ({width, height}) => {
-            setTrackSize(vertical ? height : width);
-            setSize(vertical ? width : height);
+            if (width * height > 0) {
+                setTrackSize(vertical ? height : width);
+                onResize?.(vertical ? width : height);
+            }
         },
         'border-box'
     );

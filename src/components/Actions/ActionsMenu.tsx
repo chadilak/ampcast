@@ -70,7 +70,7 @@ export default function ActionsMenu<T extends MediaObject>({
             {source?.singular && level === 1 ? (
                 <>
                     <PopupMenuSeparator />
-                    <MediaSourceMenuItems source={source} />
+                    <MediaSourceMenuItems />
                 </>
             ) : null}
         </PopupMenu>

@@ -1,5 +1,4 @@
 import {filter, map, switchMap, tap} from 'rxjs';
-import ItemType from 'types/ItemType';
 import MediaItem from 'types/MediaItem';
 import MediaObject from 'types/MediaObject';
 import MediaPlaylist from 'types/MediaPlaylist';
@@ -9,7 +8,7 @@ import {Logger, uniqBy} from 'utils';
 import {dispatchMetadataChanges, observePlaylistAdditions} from 'services/metadata';
 import SequentialPager from 'services/pagers/SequentialPager';
 import apple from './apple';
-import {createMediaObjects, musicKitFetch, MusicKitItem} from './musicKitUtils';
+import {createMediaObjects, musicKitFetch, MusicKitItem, musicKitParams} from './musicKitUtils';
 
 const logger = new Logger('MusicKitPager');
 
@@ -49,13 +48,9 @@ export default class MusicKitPager<T extends MediaObject> extends SequentialPage
                     this.nextPageUrl = result.nextPageUrl;
                     return {items, total, atEnd};
                 } catch (err: any) {
-                    // Apple playlists return 404 if they are empty.
-                    // If it's been deleted then it has no name/title.
-                    if (
-                        err.name === 'NOT_FOUND' &&
-                        parent?.itemType === ItemType.Playlist &&
-                        parent.title
-                    ) {
+                    // Apple often returns 404 if lists are empty.
+                    if (err.name === 'NOT_FOUND') {
+                        logger.warn(err);
                         return {items: [], total: 0, atEnd: true};
                     } else {
                         throw err;
@@ -76,16 +71,7 @@ export class MusicKitPlaylistItemsPager extends MusicKitPager<MediaItem> {
     ) {
         super(
             tracksUrl,
-            {
-                'include[songs]': 'artists,albums',
-                'include[library-songs]': 'catalog,artists,albums',
-                'include[albums]': 'artists',
-                'include[library-albums]': 'catalog,artists',
-                'include[library-artists]': 'catalog',
-                'include[music-videos]': 'artists,albums',
-                'include[library-music-videos]': 'catalog,artists,albums',
-                'omit[resource:artists]': 'relationships',
-            },
+            musicKitParams,
             {
                 pageSize: 100,
                 maxSize: playlist.isChart ? 100 : undefined,

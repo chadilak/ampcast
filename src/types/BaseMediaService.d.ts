@@ -42,9 +42,9 @@ type BaseMediaService = Auth & {
         readonly Credentials?: React.FC<{service: MediaService}>;
         readonly Login?: React.FC<{service: MediaService}>;
         // Radio stations.
-        EditStationDialog?: React.FC<DialogProps & {station: MediaItem}>;
-        CreateStationDialog?: React.FC<DialogProps>;
-        ManageStations?: React.FC<{service: MediaService}>;
+        readonly EditStationDialog?: React.FC<DialogProps & {station: MediaItem}>;
+        readonly CreateStationDialog?: React.FC<DialogProps>;
+        readonly ManageStations?: React.FC<{service: MediaService}>;
     };
     // For services that play audio in an iframe.
     readonly iframeAudioPlayback?:
@@ -74,6 +74,7 @@ type BaseMediaService = Auth & {
     ) => Promise<MediaPlaylist>;
     createRadioPager?: (radio: MediaItem) => Pager<MediaItem>;
     createRelatedItemsPager?: <T extends MediaObject>(item: T) => Pager<T> | null;
+    createRelatedPlaylistsSource?: <T extends MediaObject>(item: T) => MediaSource<MediaPlaylist> | null;
     createSongsPager?: (song: MediaItem) => Pager<T>;
     createSourceFromObject?: <T extends MediaObject>(src: string) => MediaSource<T>;
     createSourceFromPin?: <T extends Pinnable>(pin: Pin) => MediaSource<T>;

@@ -27,7 +27,7 @@ import PlaybackType from 'types/PlaybackType';
 import ServiceType from 'types/ServiceType';
 import {getItemTypeFromSrc, getMediaObjectId, getTextFromHtml, Logger} from 'utils';
 import {OpenSubsonicRequiredError} from 'services/errors';
-import {createMediaSourceFromObject, createRadioStation} from 'services/mediaServices/mediaSources';
+import {createSingularMediaSource, createRadioStation} from 'services/mediaServices/mediaSources';
 import SimpleMediaPager from 'services/pagers/SimpleMediaPager';
 import SimplePager from 'services/pagers/SimplePager';
 import WrappedPager from 'services/pagers/WrappedPager';
@@ -700,14 +700,14 @@ export default class SubsonicService implements PersonalMediaService {
         const itemType = getItemTypeFromSrc(src);
         switch (itemType) {
             case ItemType.Playlist:
-                return createMediaSourceFromObject<MediaPlaylist>({
+                return createSingularMediaSource<MediaPlaylist>({
                     src,
                     itemType,
                     secondaryItems: subsonicPlaylistItems,
                 }) as MediaSource<T>;
 
             default:
-                return createMediaSourceFromObject<T>({
+                return createSingularMediaSource<T>({
                     src,
                     itemType,
                 });
@@ -715,7 +715,7 @@ export default class SubsonicService implements PersonalMediaService {
     }
 
     createSourceFromPin<T extends Pinnable>(pin: Pin): MediaSource<T> {
-        return createMediaSourceFromObject<MediaPlaylist>({
+        return createSingularMediaSource<MediaPlaylist>({
             src: pin.src,
             itemType: ItemType.Playlist,
             isPin: true,

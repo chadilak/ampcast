@@ -11,8 +11,6 @@
         isolation: isolate;
         display: flex;
         flex-direction: column;
-        min-width: calc(2 * var(--scrollbar-width));
-        min-height: calc(2 * var(--scrollbar-width));
     }
 
     &-head {

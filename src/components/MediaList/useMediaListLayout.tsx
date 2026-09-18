@@ -91,7 +91,7 @@ function createMediaListLayout(
         return {view: 'details', cols: []};
     }
     let showMenu = showActionsMenu;
-    if (level === 1 && (source?.singular || source?.isPin)) {
+    if (level === 1 && source?.singular) {
         showMenu = (
             items: readonly any[],
             target: HTMLElement,

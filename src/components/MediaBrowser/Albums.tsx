@@ -7,7 +7,7 @@ import MediaObjectBrowser from 'components/MediaObjectBrowser';
 import Splitter from 'components/Splitter';
 import {PagedItemsProps} from './PagedItems';
 
-export default function Albums({source, ...props}: PagedItemsProps<MediaAlbum>) {
+export default function Albums({service, source, ...props}: PagedItemsProps<MediaAlbum>) {
     const [[selectedAlbum], setSelectedAlbum] = useState<readonly MediaAlbum[]>([]);
     const [error, setError] = useState<unknown>();
     const tracksPager = selectedAlbum?.pager || null;
@@ -39,7 +39,13 @@ export default function Albums({source, ...props}: PagedItemsProps<MediaAlbum>) 
     return (
         <div className="panel">
             {source.singular ? (
-                <MediaObjectBrowser item={selectedAlbum} itemList={albumList} error={error}>
+                <MediaObjectBrowser
+                    service={service}
+                    source={source}
+                    item={selectedAlbum}
+                    itemList={albumList}
+                    error={error}
+                >
                     {trackList}
                 </MediaObjectBrowser>
             ) : source.secondaryItems?.layout?.view === 'none' ? (

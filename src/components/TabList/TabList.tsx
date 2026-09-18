@@ -1,4 +1,4 @@
-import React, {useCallback, useId, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useId, useRef, useState} from 'react';
 import Tab from './Tab';
 import TabPanel from './TabPanel';
 import './TabList.scss';
@@ -6,7 +6,7 @@ import './TabList.scss';
 export interface TabItem {
     readonly tab: React.ReactNode;
     readonly panel: React.ReactNode;
-    readonly prefix?: string;
+    readonly suffix?: string;
 }
 
 export interface TabListProps {
@@ -18,15 +18,11 @@ export interface TabListProps {
 export default function TabList({label, items, className = ''}: TabListProps) {
     const id = useId();
     const tabsRef = useRef<HTMLUListElement>(null);
-    const [buttons, setButtons] = useState<HTMLButtonElement[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
-
-    useEffect(() => {
-        setButtons(Array.from(tabsRef.current!.querySelectorAll('button')));
-    }, []);
 
     const handleKeyDown = useCallback(
         (event: React.KeyboardEvent) => {
+            const buttons = Array.from(tabsRef.current!.querySelectorAll('button'));
             let currentIndex = selectedIndex;
             if (event.code === 'ArrowRight') {
                 event.stopPropagation();
@@ -41,7 +37,7 @@ export default function TabList({label, items, className = ''}: TabListProps) {
                 button.focus();
             }
         },
-        [selectedIndex, buttons]
+        [selectedIndex]
     );
 
     const handleFocus = useCallback((event: React.FocusEvent) => {

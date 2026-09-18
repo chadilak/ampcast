@@ -18,7 +18,7 @@ import Pin, {Pinnable} from 'types/Pin';
 import {getItemTypeFromSrc} from 'utils';
 import {NoMusicVideoLibraryError} from 'services/errors';
 import {t} from 'services/i18n';
-import {createMediaSourceFromObject} from 'services/mediaServices/mediaSources';
+import {createSingularMediaSource} from 'services/mediaServices/mediaSources';
 import SimpleMediaPager from 'services/pagers/SimpleMediaPager';
 import SimplePager from 'services/pagers/SimplePager';
 import WrappedPager from 'services/pagers/WrappedPager';
@@ -60,7 +60,7 @@ export function createSourceFromObject<T extends MediaObject>(src: string): Medi
     const itemType = getItemTypeFromSrc(src);
     switch (itemType) {
         case ItemType.Artist:
-            return createMediaSourceFromObject<MediaArtist>({
+            return createSingularMediaSource<MediaArtist>({
                 src,
                 itemType,
                 secondaryItems: {
@@ -71,7 +71,7 @@ export function createSourceFromObject<T extends MediaObject>(src: string): Medi
             }) as MediaSource<T>;
 
         case ItemType.Playlist:
-            return createMediaSourceFromObject<MediaPlaylist>({
+            return createSingularMediaSource<MediaPlaylist>({
                 src,
                 itemType,
                 primaryItems: {
@@ -85,7 +85,7 @@ export function createSourceFromObject<T extends MediaObject>(src: string): Medi
             }) as MediaSource<T>;
 
         default:
-            return createMediaSourceFromObject<T>({
+            return createSingularMediaSource<T>({
                 src,
                 itemType,
             });
@@ -93,7 +93,7 @@ export function createSourceFromObject<T extends MediaObject>(src: string): Medi
 }
 
 export function createSourceFromPin<T extends Pinnable>(pin: Pin): MediaSource<T> {
-    return createMediaSourceFromObject<MediaPlaylist>({
+    return createSingularMediaSource<MediaPlaylist>({
         src: pin.src,
         itemType: ItemType.Playlist,
         isPin: true,

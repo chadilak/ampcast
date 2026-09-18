@@ -33,10 +33,11 @@ import appleSettings from './appleSettings';
 import appleSources, {
     appleEditablePlaylists,
     appleSearch,
+    createRelatedPlaylistsSource,
     createSourceFromObject,
     createSourceFromPin,
 } from './appleSources';
-import {createSongsPager} from './musicKitUtils';
+import {createRelatedItemsPager, createSongsPager} from './musicKitUtils';
 import Credentials from './components/AppleCredentials';
 import Login from './components/AppleLogin';
 import StreamingSettings from './components/AppleStreamingSettings';
@@ -76,6 +77,8 @@ const apple: PublicMediaService = {
     canStore,
     compareForRating,
     createPlaylist,
+    createRelatedPlaylistsSource,
+    createRelatedItemsPager,
     createSongsPager,
     createSourceFromObject,
     createSourceFromPin,

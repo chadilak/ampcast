@@ -8,7 +8,7 @@ import Splitter from 'components/Splitter';
 import usePager from 'hooks/usePager';
 import {PagedItemsProps} from './PagedItems';
 
-export default function Playlists({source, ...props}: PagedItemsProps<MediaPlaylist>) {
+export default function Playlists({service, source, ...props}: PagedItemsProps<MediaPlaylist>) {
     const [[selectedPlaylist], setSelectedPlaylist] = useState<readonly MediaPlaylist[]>([]);
     const [error, setError] = useState<unknown>();
     const [{complete: draggable}] = usePager(selectedPlaylist?.pager);
@@ -39,7 +39,13 @@ export default function Playlists({source, ...props}: PagedItemsProps<MediaPlayl
     return (
         <div className="panel">
             {source.singular ? (
-                <MediaObjectBrowser item={selectedPlaylist} itemList={playlistList} error={error}>
+                <MediaObjectBrowser
+                    service={service}
+                    source={source}
+                    item={selectedPlaylist}
+                    itemList={playlistList}
+                    error={error}
+                >
                     {playlistItems}
                 </MediaObjectBrowser>
             ) : source.secondaryItems?.layout?.view === 'none' ? (

@@ -9,7 +9,7 @@ export interface TabPanelProps {
 }
 
 export default function TabPanel({id, item, index, hidden}: TabPanelProps) {
-    const className = item.prefix ? `tab-panel-${item.prefix}` : '';
+    const className = item.suffix ? `tab-panel-${item.suffix}` : '';
 
     return (
         <div

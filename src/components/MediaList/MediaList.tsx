@@ -3,6 +3,7 @@ import {interval} from 'rxjs';
 import {Except} from 'type-fest';
 import Action from 'types/Action';
 import ItemType from 'types/ItemType';
+import MediaAlbum from 'types/MediaAlbum';
 import MediaListLayout, {Field} from 'types/MediaListLayout';
 import MediaObject from 'types/MediaObject';
 import MediaPlaylist from 'types/MediaPlaylist';
@@ -11,13 +12,16 @@ import Pager from 'types/Pager';
 import ParentOf from 'types/ParentOf';
 import SortParams from 'types/SortParams';
 import {setSourceFields} from 'services/mediaServices/servicesSettings';
-import {getSourceItems} from 'services/mediaServices/mediaSources';
+import {getMediaListId, getMediaSourceItems} from 'services/mediaServices/mediaSources';
 import {performAction, showActionsMenu} from 'components/Actions';
 import ErrorBox, {ErrorBoxProps} from 'components/Errors/ErrorBox';
 import ListView, {Column, ListViewProps} from 'components/ListView';
 import useHistory from 'components/MediaBrowser/useHistory';
+import useSyntheticAlbum from 'components/MediaBrowser/useSyntheticAlbum';
 import useFirstValue from 'hooks/useFirstValue';
 import usePager from 'hooks/usePager';
+import useActiveSource from 'components/MediaBrowser/useActiveSource';
+import useElementHidden from 'hooks/useElementHidden';
 import usePlaybackState from 'hooks/usePlaybackState';
 import usePreferences from 'hooks/usePreferences';
 import MediaListStatusBar from './MediaListStatusBar';
@@ -87,11 +91,13 @@ export default function MediaList<T extends MediaObject>({
 }: MediaListProps<T>) {
     const uniqueId = useId();
     const [inactive, setInactive] = useState(false);
-    const singular = level === 1 && (source?.isPin || source?.singular);
-    const [, forceUpdate] = useReducer((i) => i + 1, 0);
-    const listId = source ? `${source.sourceId || source.id}/${level}` : uniqueId;
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const sourceItems = getSourceItems(source, level); // view config
+    const hidden = useElementHidden(containerRef);
+    const syntheticAlbum = isSyntheticAlbum(parent) ? parent : undefined;
+    const singular = level === 1 && source?.singular;
+    const listId = source ? getMediaListId(source, level, syntheticAlbum) : uniqueId;
+    const [, forceUpdate] = useReducer((i) => i + 1, 0);
+    const sourceItems = getMediaSourceItems(source, level, syntheticAlbum); // view config
     const {itemKey = 'src', layout: layoutOptions} = sourceItems;
     const parentPlaylist = isPlaylist(parent) ? parent : undefined;
     const layout = useMediaListLayout(
@@ -134,6 +140,11 @@ export default function MediaList<T extends MediaObject>({
         onInternalSort
     );
     const {currentKey} = useHistory();
+    const [, setActiveSource] = useActiveSource();
+    const [, setSyntheticAlbum] = useSyntheticAlbum();
+    const isAlbumList =
+        (source?.itemType === ItemType.Album && level === 1) ||
+        (source?.itemType === ItemType.Artist && level === 2);
 
     useEffect(() => {
         // Don't render `ListView`s if the component is hidden in the history stack.
@@ -192,6 +203,23 @@ export default function MediaList<T extends MediaObject>({
         },
         [onSelect]
     );
+
+    useEffect(() => {
+        if (source && !hidden) {
+            setActiveSource(source);
+        }
+    }, [source, hidden, setActiveSource]);
+
+    useEffect(() => {
+        if (isAlbumList && !hidden) {
+            const [album] = selectedItems;
+            if (album?.synthetic) {
+                setSyntheticAlbum(album as MediaAlbum);
+            } else {
+                setSyntheticAlbum(undefined);
+            }
+        }
+    }, [isAlbumList, hidden, selectedItems, setSyntheticAlbum]);
 
     const handleContextMenu = useCallback(
         async (items: readonly T[], x: number, y: number, button: number) => {
@@ -296,7 +324,7 @@ export default function MediaList<T extends MediaObject>({
     return (
         <div
             className={`panel ${className} ${viewClassName} ${level === 3 ? 'tertiary' : level === 2 ? 'secondary' : 'primary'}-items`}
-            id={listId}
+            data-list-id={listId}
             data-view={layout.view}
             onDragStart={onDragStart}
             ref={containerRef}
@@ -352,4 +380,8 @@ export default function MediaList<T extends MediaObject>({
 
 function isPlaylist(item?: MediaObject): item is MediaPlaylist {
     return item?.itemType === ItemType.Playlist;
+}
+
+function isSyntheticAlbum(item?: MediaObject): item is MediaAlbum {
+    return !!item?.synthetic && item.itemType === ItemType.Album;
 }

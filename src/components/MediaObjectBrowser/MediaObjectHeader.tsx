@@ -5,5 +5,5 @@ export interface MediaObjectHeaderProps {
 }
 
 export default function MediaObjectHeader({children}: MediaObjectHeaderProps) {
-    return <div className="media-object-header">{children}</div>;
+    return <header className="media-object-header">{children}</header>;
 }

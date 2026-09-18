@@ -8,9 +8,8 @@ import MediaObjectBrowser from 'components/MediaObjectBrowser';
 import useFirstValue from 'hooks/useFirstValue';
 import {PagedItemsProps} from './PagedItems';
 
-export default function MediaItems({source, ...props}: PagedItemsProps<MediaItem>) {
+export default function MediaItems({service, source, ...props}: PagedItemsProps<MediaItem>) {
     const [[selectedItem], setSelectedItem] = useState<readonly MediaItem[]>([]);
-    const item = useFirstValue(selectedItem);
     const [error, setError] = useState<unknown>();
 
     const itemList = (
@@ -27,8 +26,14 @@ export default function MediaItems({source, ...props}: PagedItemsProps<MediaItem
     return (
         <div className="panel">
             {source.singular ? (
-                <MediaObjectBrowser item={item} itemList={itemList} error={error}>
-                    <BrowserItems source={source} item={item} />
+                <MediaObjectBrowser
+                    service={service}
+                    source={source}
+                    item={selectedItem}
+                    itemList={itemList}
+                    error={error}
+                >
+                    <MixedMediaItems source={source} item={selectedItem} />
                 </MediaObjectBrowser>
             ) : (
                 itemList
@@ -37,26 +42,28 @@ export default function MediaItems({source, ...props}: PagedItemsProps<MediaItem
     );
 }
 
-interface BrowserItemsProps {
+interface MixedMediaItemsProps {
     source: MediaSource<MediaItem>;
     item: MediaItem | undefined;
 }
 
-function BrowserItems({source, item}: BrowserItemsProps) {
+function MixedMediaItems({source, item}: MixedMediaItemsProps) {
+    const originalItem = useFirstValue(item); // Prevent re-renders if the object is updated.
+
     const pager = useMemo(() => {
-        if (item) {
-            const service = getServiceFromSrc(item);
+        if (originalItem) {
+            const service = getServiceFromSrc(originalItem);
             if (service?.createSongsPager) {
-                const pager = service.createSongsPager(item);
+                const pager = service.createSongsPager(originalItem);
                 if (pager) {
                     return pager;
                 }
             }
-            return new SimpleMediaPager(async () => [item]);
+            return new SimpleMediaPager(async () => [originalItem]);
         } else {
             return null;
         }
-    }, [item]);
+    }, [originalItem]);
 
     return (
         <MediaItemList
