@@ -4,6 +4,7 @@ import MediaPlaylist from 'types/MediaPlaylist';
 import pinStore from 'services/pins/pinStore';
 import Button from 'components/Button';
 import Icon from 'components/Icon';
+import {ShowActionsMenuContext, ShowActionsMenuParams, showHeaderMenu} from 'components/Actions';
 import {ErrorBoxProps} from 'components/Errors/ErrorBox';
 import {defaultMediaItemCard, playlistItemsLayout} from 'components/MediaList/layouts';
 import PlaylistList from 'components/MediaList/PlaylistList';
@@ -54,20 +55,29 @@ export default function PinnedPlaylist({source, ...props}: PagedItemsProps<Media
         }
     }, [pinnedPlaylist]);
 
+    const showMenu = useCallback(
+        async ({target, x, y}: ShowActionsMenuParams<MediaPlaylist>) => {
+            return showHeaderMenu({source, item: pinnedPlaylist, target, x, y});
+        },
+        [source, pinnedPlaylist]
+    );
+
     return (
         <div className="panel pinned-playlist" ref={ref}>
             {error ? (
                 <PinnedPlaylistError error={error} reportingId={source.id} />
             ) : (
-                <PlaylistList
-                    {...props}
-                    title={source.title}
-                    defaultLayout={defaultLayout}
-                    source={source}
-                    level={1}
-                    onError={setError}
-                    onSelect={setPinnedPlaylist}
-                />
+                <ShowActionsMenuContext value={showMenu}>
+                    <PlaylistList
+                        {...props}
+                        title={source.title}
+                        defaultLayout={defaultLayout}
+                        source={source}
+                        level={1}
+                        onError={setError}
+                        onSelect={setPinnedPlaylist}
+                    />
+                </ShowActionsMenuContext>
             )}
             <PlaylistItemsList
                 title={`${source.title}: Tracks`}

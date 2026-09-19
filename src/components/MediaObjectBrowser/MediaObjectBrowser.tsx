@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import MediaObject from 'types/MediaObject';
 import MediaService from 'types/MediaService';
 import MediaSource from 'types/MediaSource';
@@ -24,17 +24,21 @@ export default function MediaObjectBrowser<T extends MediaObject>({
     children,
     error,
 }: MediaObjectBrowserProps<T>) {
-    const originalItem = useFirstValue(item); // Prevent re-renders if the object is updated.
+    const initialItem = useFirstValue(item); // Prevent re-renders if the object is updated.
+    const [currentSource, setCurrentSource] = useState<MediaSource<any> | undefined>(source);
 
     return (
         <div className="panel media-object-browser">
             <div className="media-object-browser-content">
-                <MediaObjectHeader>{itemList}</MediaObjectHeader>
+                <MediaObjectHeader source={currentSource} item={item}>
+                    {itemList}
+                </MediaObjectHeader>
                 <MediaObjectTabs
                     service={service}
                     source={source}
-                    item={originalItem}
+                    item={initialItem}
                     error={error}
+                    onSourceChange={setCurrentSource}
                 >
                     {children}
                 </MediaObjectTabs>

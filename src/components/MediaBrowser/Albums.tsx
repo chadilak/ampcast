@@ -10,7 +10,6 @@ import {PagedItemsProps} from './PagedItems';
 export default function Albums({service, source, ...props}: PagedItemsProps<MediaAlbum>) {
     const [[selectedAlbum], setSelectedAlbum] = useState<readonly MediaAlbum[]>([]);
     const [error, setError] = useState<unknown>();
-    const tracksPager = selectedAlbum?.pager || null;
 
     const albumList = (
         <AlbumList
@@ -28,7 +27,7 @@ export default function Albums({service, source, ...props}: PagedItemsProps<Medi
             title={selectedAlbum ? `${selectedAlbum.title}: Tracks` : ''}
             className={`album-tracks ${selectedAlbum?.multiDisc ? 'multi-disc' : ''}`}
             parent={selectedAlbum}
-            pager={tracksPager}
+            pager={selectedAlbum?.pager || null}
             defaultLayout={albumTracksLayout}
             source={source}
             level={2}

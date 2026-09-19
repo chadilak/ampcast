@@ -54,6 +54,7 @@ export default interface MediaItem extends BaseMediaObject {
     // Radio stations.
     readonly country?: string;
     readonly countryCode?: string;
+    readonly editable?: boolean;
     readonly isFavoriteStation?: boolean;
     readonly skippable?: boolean;
     readonly onlineradiobox?: {

@@ -17,11 +17,8 @@ import {performAction, showActionsMenu} from 'components/Actions';
 import ErrorBox, {ErrorBoxProps} from 'components/Errors/ErrorBox';
 import ListView, {Column, ListViewProps} from 'components/ListView';
 import useHistory from 'components/MediaBrowser/useHistory';
-import useSyntheticAlbum from 'components/MediaBrowser/useSyntheticAlbum';
 import useFirstValue from 'hooks/useFirstValue';
 import usePager from 'hooks/usePager';
-import useActiveSource from 'components/MediaBrowser/useActiveSource';
-import useElementHidden from 'hooks/useElementHidden';
 import usePlaybackState from 'hooks/usePlaybackState';
 import usePreferences from 'hooks/usePreferences';
 import MediaListStatusBar from './MediaListStatusBar';
@@ -92,7 +89,6 @@ export default function MediaList<T extends MediaObject>({
     const uniqueId = useId();
     const [inactive, setInactive] = useState(false);
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const hidden = useElementHidden(containerRef);
     const syntheticAlbum = isSyntheticAlbum(parent) ? parent : undefined;
     const singular = level === 1 && source?.singular;
     const listId = source ? getMediaListId(source, level, syntheticAlbum) : uniqueId;
@@ -140,11 +136,6 @@ export default function MediaList<T extends MediaObject>({
         onInternalSort
     );
     const {currentKey} = useHistory();
-    const [, setActiveSource] = useActiveSource();
-    const [, setSyntheticAlbum] = useSyntheticAlbum();
-    const isAlbumList =
-        (source?.itemType === ItemType.Album && level === 1) ||
-        (source?.itemType === ItemType.Artist && level === 2);
 
     useEffect(() => {
         // Don't render `ListView`s if the component is hidden in the history stack.
@@ -162,6 +153,7 @@ export default function MediaList<T extends MediaObject>({
     }, []);
 
     useEffect(() => {
+        // Turns autofill on/off.
         pager?.activate?.();
         return () => pager?.deactivate?.();
     }, [pager]);
@@ -204,36 +196,20 @@ export default function MediaList<T extends MediaObject>({
         [onSelect]
     );
 
-    useEffect(() => {
-        if (source && !hidden) {
-            setActiveSource(source);
-        }
-    }, [source, hidden, setActiveSource]);
-
-    useEffect(() => {
-        if (isAlbumList && !hidden) {
-            const [album] = selectedItems;
-            if (album?.synthetic) {
-                setSyntheticAlbum(album as MediaAlbum);
-            } else {
-                setSyntheticAlbum(undefined);
-            }
-        }
-    }, [isAlbumList, hidden, selectedItems, setSyntheticAlbum]);
-
     const handleContextMenu = useCallback(
         async (items: readonly T[], x: number, y: number, button: number) => {
             if (items.length === 0) {
                 return;
             }
-            const action = await showActionsMenu(
+            const action = await showActionsMenu({
                 items,
-                containerRef.current!,
+                target: containerRef.current!,
                 x,
                 y,
-                button === -1 ? 'right' : 'left',
-                {inListView: true, parentPlaylist, source}
-            );
+                align: button === -1 ? 'right' : 'left',
+                inListView: true,
+                parentPlaylist,
+            });
             if (action) {
                 if (action === Action.DeletePlaylistItems) {
                     performAction(action, items, parentPlaylist);
@@ -242,7 +218,7 @@ export default function MediaList<T extends MediaObject>({
                 }
             }
         },
-        [parentPlaylist, source]
+        [parentPlaylist]
     );
 
     const handleDoubleClick = useCallback(

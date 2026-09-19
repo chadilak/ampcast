@@ -8,7 +8,7 @@ export interface TabProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 }
 
 export default function Tab({id, item, index, selected, ...props}: TabProps) {
-    const className = item.suffix ? `tab-${item.suffix}` : '';
+    const className = item.id ? `tab-${item.id}` : '';
 
     const handleMouseDown = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
         if (event.button === 0) {

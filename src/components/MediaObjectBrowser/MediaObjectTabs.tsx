@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import MediaObject from 'types/MediaObject';
 import MediaService from 'types/MediaService';
 import MediaSource from 'types/MediaSource';
@@ -16,6 +16,7 @@ export interface MediaObjectTabsProps<T extends MediaObject> {
     item: T | undefined;
     error?: unknown;
     children?: React.ReactNode;
+    onSourceChange?: (source: MediaSource<any> | undefined) => void;
 }
 
 export default function MediaObjectTabs<T extends MediaObject>({
@@ -24,14 +25,31 @@ export default function MediaObjectTabs<T extends MediaObject>({
     item,
     error,
     children,
+    onSourceChange,
 }: MediaObjectTabsProps<T>) {
-    const relatedItemsPager = useMemo(() => {
-        return item ? service.createRelatedItemsPager?.(item) || null : null;
-    }, [service, item]);
+    const [currentSource, setCurrentSource] = useState<MediaSource<any> | undefined>(source);
+
+    useEffect(() => {
+        onSourceChange?.(currentSource);
+    }, [currentSource, onSourceChange]);
 
     const relatedPlaylists = useMemo(() => {
-        return item ? service.createRelatedPlaylistsSource?.(item) || null : null;
+        return item ? service.createRelatedPlaylistsSource?.(item) : undefined;
     }, [service, item]);
+
+    const relatedItems = useMemo(() => {
+        const pager = item ? service.createRelatedItemsPager?.(item) : undefined;
+        return pager
+            ? {
+                  ...source,
+                  singular: false,
+                  id: `${source.id}/related`,
+                  search() {
+                      return pager;
+                  },
+              }
+            : undefined;
+    }, [service, source, item]);
 
     const tabs: TabItem[] = useMemo(() => {
         const tabs = [
@@ -42,7 +60,7 @@ export default function MediaObjectTabs<T extends MediaObject>({
                 ) : (
                     children
                 ),
-                suffix: 'media',
+                id: 'media',
             },
         ];
         if (item) {
@@ -50,16 +68,14 @@ export default function MediaObjectTabs<T extends MediaObject>({
                 tabs.push({
                     tab: 'Playlists',
                     panel: <RelatedPlaylists service={service} source={relatedPlaylists} />,
-                    suffix: 'playlists',
+                    id: 'playlists',
                 });
             }
-            if (relatedItemsPager) {
+            if (relatedItems) {
                 tabs.push({
                     tab: 'Related',
-                    panel: (
-                        <RelatedItems service={service} source={source} pager={relatedItemsPager} />
-                    ),
-                    suffix: 'related',
+                    panel: <RelatedItems service={service} source={relatedItems} />,
+                    id: 'related',
                 });
             }
             tabs.push(
@@ -70,23 +86,46 @@ export default function MediaObjectTabs<T extends MediaObject>({
                             <MediaInfo item={item} />
                         </Scrollable>
                     ),
-                    suffix: 'info',
+                    id: 'info',
                 },
                 {
                     tab: 'Details',
                     panel: <MediaDetails item={item} />,
-                    suffix: 'details',
+                    id: 'details',
                 }
             );
         }
         return tabs;
-    }, [service, source, item, children, error, relatedItemsPager, relatedPlaylists]);
+    }, [service, item, children, error, relatedPlaylists, relatedItems]);
+
+    const handleTabSelect = useCallback(
+        (tabId?: string) => {
+            switch (tabId) {
+                case 'media':
+                    setCurrentSource(source);
+                    break;
+
+                case 'playlists':
+                    setCurrentSource(relatedPlaylists);
+                    break;
+
+                case 'related':
+                    setCurrentSource(relatedItems);
+                    break;
+
+                default:
+                    setCurrentSource(undefined);
+            }
+        },
+        [source, relatedPlaylists, relatedItems]
+    );
 
     return (
         <TabList
             className="media-object-tabs"
             items={tabs}
             label={error ? 'Error' : item?.title || ''}
+            onTabSelect={handleTabSelect}
         />
     );
 }

@@ -8,6 +8,7 @@ import {isPersonalMediaService} from 'services/mediaServices';
 import Login from 'components/Login';
 import useIsLibraryLoading from 'hooks/useIsLibraryLoading';
 import useIsLoggedIn from 'hooks/useIsLoggedIn';
+import BrowserContexts from './BrowserContexts';
 import DefaultBrowser from './DefaultBrowser';
 import ErrorScreen from './ErrorScreen';
 import FilterBrowser from './FilterBrowser';
@@ -26,12 +27,13 @@ export default function MediaBrowser({service, source}: MediaBrowserProps) {
     const isLibraryLoading = useIsLibraryLoading(service);
     const renderError = useErrorScreen(service, source);
     const noInternetError = useNoInternetError(service);
-    const Browser = source.Component ||
-          (source.itemType === ItemType.Folder
-              ? FolderBrowser
-              : 'filterType' in source
-                ? (FilterBrowser as any)
-                : DefaultBrowser);
+    const Browser =
+        source.Component ||
+        (source.itemType === ItemType.Folder
+            ? FolderBrowser
+            : 'filterType' in source
+              ? (FilterBrowser as any)
+              : DefaultBrowser);
 
     useEffect(() => {
         if (isPersonalMediaService(service)) {
@@ -51,7 +53,9 @@ export default function MediaBrowser({service, source}: MediaBrowserProps) {
                     <LibraryLoadingScreen service={service} />
                 ) : (
                     <ErrorBoundary fallbackRender={renderError}>
-                        <Browser service={service} source={source} />
+                        <BrowserContexts>
+                            <Browser service={service} source={source} />
+                        </BrowserContexts>
                     </ErrorBoundary>
                 )
             ) : (

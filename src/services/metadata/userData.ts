@@ -5,15 +5,10 @@ import UserData from 'types/UserData';
 
 type TransientData = Pick<
     PlaylistItem,
-    | 'lookupStatus'
-    | 'startTime'
-    | 'playlistItemId'
-    | 'isFavoriteStation'
-    | 'nanoId'
-    | 'links'
+    'lookupStatus' | 'startTime' | 'playlistItemId' | 'isFavoriteStation' | 'nanoId' | 'links'
 >;
 
-const userDataKeys: (keyof UserData | keyof ListenData | keyof TransientData)[] = [
+export const userDataKeys: (keyof UserData | keyof ListenData | keyof TransientData)[] = [
     'rating',
     'globalLikes',
     'globalRating',
@@ -45,7 +40,7 @@ export function removeUserData<T extends Partial<MediaItem>>(item: T): Subtract<
         {} as unknown as Subtract<T, UserData>
     );
     if (result.plex) {
-        delete (result.plex as any).playQueueItemID
+        delete (result.plex as any).playQueueItemID;
     }
     return result;
 }

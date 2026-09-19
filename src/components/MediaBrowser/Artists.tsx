@@ -13,8 +13,6 @@ export default function Artists({service, source, ...props}: PagedItemsProps<Med
     const [[selectedArtist], setSelectedArtist] = useState<readonly MediaArtist[]>([]);
     const [[selectedAlbum], setSelectedAlbum] = useState<readonly MediaAlbum[]>([]);
     const [error, setError] = useState<unknown>();
-    const albumsPager = selectedArtist?.pager || null;
-    const tracksPager = selectedAlbum?.pager || null;
 
     const artistList = (
         <ArtistList
@@ -31,7 +29,7 @@ export default function Artists({service, source, ...props}: PagedItemsProps<Med
         <AlbumList
             title={selectedArtist ? `${selectedArtist.title}: Albums` : ''}
             className="artist-albums"
-            pager={albumsPager}
+            pager={selectedArtist?.pager || null}
             source={source}
             level={2}
             onSelect={setSelectedAlbum}
@@ -44,7 +42,7 @@ export default function Artists({service, source, ...props}: PagedItemsProps<Med
             title={selectedAlbum ? `${selectedAlbum.title}: Tracks` : ''}
             className={`album-tracks ${selectedAlbum?.synthetic ? 'synthetic' : ''} ${selectedAlbum?.multiDisc ? 'multi-disc' : ''}`}
             parent={selectedAlbum}
-            pager={tracksPager}
+            pager={selectedAlbum?.pager || null}
             source={source}
             defaultLayout={albumTracksLayout}
             level={3}

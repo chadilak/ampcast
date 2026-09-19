@@ -1,29 +1,15 @@
-import React, {useMemo} from 'react';
+import React from 'react';
+import {Except} from 'type-fest';
 import MediaObject from 'types/MediaObject';
-import SimplePager from 'services/pagers/SimplePager';
 import PagedItems, {PagedItemsProps} from 'components/MediaBrowser/PagedItems';
+import useFirstValue from 'hooks/useFirstValue';
 
 export default function RelatedItems<T extends MediaObject>({
     source,
-    pager,
     emptyMessage = 'Nothing found',
     ...props
-}: PagedItemsProps<T>) {
-    const relatedSource = useMemo(() => {
-        // Copy the underlying source.
-        return {
-            ...source,
-            singular: false,
-            isPin: false,
-            id: `${source.id}/related`,
-            // Not called.
-            search() {
-                return new SimplePager<T>();
-            },
-        };
-    }, [source]);
+}: Except<PagedItemsProps<T>, 'pager'>) {
+    const pager = useFirstValue(source.search());
 
-    return relatedSource ? (
-        <PagedItems {...props} source={relatedSource} pager={pager} emptyMessage={emptyMessage} />
-    ) : null;
+    return <PagedItems {...props} source={source} pager={pager} emptyMessage={emptyMessage} />;
 }

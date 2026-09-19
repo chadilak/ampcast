@@ -1,4 +1,4 @@
-import React, {useCallback, useId, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useId, useRef, useState} from 'react';
 import Tab from './Tab';
 import TabPanel from './TabPanel';
 import './TabList.scss';
@@ -6,19 +6,38 @@ import './TabList.scss';
 export interface TabItem {
     readonly tab: React.ReactNode;
     readonly panel: React.ReactNode;
-    readonly suffix?: string;
+    readonly id?: string;
 }
 
 export interface TabListProps {
     label: string;
     items: TabItem[];
     className?: string;
+    onTabIndexChange?: (tabIndex: number) => void;
+    onTabSelect?: (tabId: string | undefined) => void;
 }
 
-export default function TabList({label, items, className = ''}: TabListProps) {
+export default function TabList({
+    label,
+    items,
+    className = '',
+    onTabIndexChange,
+    onTabSelect,
+}: TabListProps) {
     const id = useId();
     const tabsRef = useRef<HTMLUListElement>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const selectedItem = items[selectedIndex];
+
+    useEffect(() => {
+        onTabIndexChange?.(selectedIndex);
+    }, [selectedIndex, onTabIndexChange]);
+
+    useEffect(() => {
+        if (selectedItem) {
+            onTabSelect?.(selectedItem.id);
+        }
+    }, [selectedItem, onTabSelect]);
 
     const handleKeyDown = useCallback(
         (event: React.KeyboardEvent) => {

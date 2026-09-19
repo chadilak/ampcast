@@ -73,8 +73,8 @@ type BaseMediaService = Auth & {
         options?: CreatePlaylistOptions<T>
     ) => Promise<MediaPlaylist>;
     createRadioPager?: (radio: MediaItem) => Pager<MediaItem>;
-    createRelatedItemsPager?: <T extends MediaObject>(item: T) => Pager<T> | null;
-    createRelatedPlaylistsSource?: <T extends MediaObject>(item: T) => MediaSource<MediaPlaylist> | null;
+    createRelatedItemsPager?: <T extends MediaObject>(item: T) => Pager<T> | undefined;
+    createRelatedPlaylistsSource?: <T extends MediaObject>(item: T) => MediaSource<MediaPlaylist> | undefined;
     createSongsPager?: (song: MediaItem) => Pager<T>;
     createSourceFromObject?: <T extends MediaObject>(src: string) => MediaSource<T>;
     createSourceFromPin?: <T extends Pinnable>(pin: Pin) => MediaSource<T>;

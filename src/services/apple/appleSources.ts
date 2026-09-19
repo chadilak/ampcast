@@ -78,10 +78,10 @@ export function createSourceFromPin<T extends Pinnable>(pin: Pin): MediaSource<T
 
 export function createRelatedPlaylistsSource<T extends MediaObject>(
     item: T
-): MediaSource<MediaPlaylist> | null {
+): MediaSource<MediaPlaylist> | undefined {
     const catalogId = item.apple?.catalogId;
     if (!catalogId) {
-        return null;
+        return;
     }
     switch (item.itemType) {
         case ItemType.Artist:
@@ -95,9 +95,6 @@ export function createRelatedPlaylistsSource<T extends MediaObject>(
                     return createRelationshipPager('artists', catalogId, 'playlists');
                 },
             };
-
-        default:
-            return null;
     }
 }
 

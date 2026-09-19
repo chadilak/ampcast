@@ -161,7 +161,7 @@ export function createNowPlayingItem(
     }
 }
 
-export function createRelatedItemsPager<T extends MediaObject>(item: T): Pager<T> | null {
+export function createRelatedItemsPager<T extends MediaObject>(item: T): Pager<T> | undefined {
     const catalogId = item.apple?.catalogId;
     if (catalogId) {
         switch (item.itemType) {
@@ -175,10 +175,9 @@ export function createRelatedItemsPager<T extends MediaObject>(item: T): Pager<T
                 return createViewPager('playlists', catalogId, 'more-by-curator');
         }
     }
-    return null;
 }
 
-function createRelatedAlbumsPager(album: MediaAlbum): Pager<MediaAlbum> | null {
+function createRelatedAlbumsPager(album: MediaAlbum): Pager<MediaAlbum> | undefined {
     const catalogId = album.apple?.catalogId;
     if (catalogId) {
         const syntheticAlbumsPager = new SimpleMediaPager(async () => {
@@ -196,7 +195,6 @@ function createRelatedAlbumsPager(album: MediaAlbum): Pager<MediaAlbum> | null {
         const albumsPager = createViewPager<MediaAlbum>('albums', catalogId, 'related-albums');
         return new WrappedPager(syntheticAlbumsPager, albumsPager);
     }
-    return null;
 }
 
 export function createSongsPager<T extends MediaItem>(song: T): Pager<T> {
@@ -560,7 +558,7 @@ function createArtistTopTracks(artist: AppleMusicApi.Artist): SetRequired<MediaA
         thumbnails: createThumbnails(item as any),
         artists: [item.name],
         genres: getGenres(item),
-        pager: createViewPager(artist.type, artist.id, 'top-songs', {maxSize: 100}),
+        pager: createViewPager(artist.type, artist.id, 'top-songs', {pageSize: 100, maxSize: 100}),
         synthetic: true,
         inLibrary: false,
         trackCount: undefined,
@@ -600,7 +598,7 @@ function createArtistVideos(artist: AppleMusicApi.Artist): MediaAlbum {
         thumbnails: createThumbnails(item as any),
         artists: [item.name],
         genres: getGenres(item),
-        pager: createRelationshipPager(artist.type, artist.id, 'music-videos'),
+        pager: createRelationshipPager(artist.type, artist.id, 'music-videos', {pageSize: 100}),
         synthetic: true,
         inLibrary: false,
         trackCount: undefined,
