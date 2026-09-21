@@ -106,13 +106,17 @@ export function getMediaLabel(itemType: ItemType, serviceId?: string): string {
 }
 
 export function getMediaObjectId(object: {src: string}): string {
-    const [, , id] = object.src.split(':');
-    return id;
+    const [serviceId, , ...rest] = object.src.split(':');
+    if (serviceId === 'emby') {
+        return rest[0];
+    } else {
+        return rest.join(':');
+    }
 }
 
 export function getServiceId(object: {src: string}): string {
-    const [id] = object.src.split(':');
-    return id;
+    const [serviceId] = object.src.split(':');
+    return serviceId;
 }
 
 export async function isHlsMedia(url: string): Promise<boolean> {

@@ -25,7 +25,13 @@ import {PersonalMediaServiceId} from 'types/MediaServiceId';
 import Pin, {Pinnable} from 'types/Pin';
 import PlaybackType from 'types/PlaybackType';
 import ServiceType from 'types/ServiceType';
-import {getItemTypeFromSrc, getMediaObjectId, getTextFromHtml, Logger} from 'utils';
+import {
+    getItemTypeFromSrc,
+    getMediaObjectId,
+    getTextFromHtml,
+    uniqSortedByFrequency,
+    Logger,
+} from 'utils';
 import {OpenSubsonicRequiredError} from 'services/errors';
 import {createSingularMediaSource, createRadioStation} from 'services/mediaServices/mediaSources';
 import SimpleMediaPager from 'services/pagers/SimpleMediaPager';
@@ -676,10 +682,47 @@ export default class SubsonicService implements PersonalMediaService {
         }
         return new SubsonicPager<MediaItem>(this, ItemType.Media, async () => {
             const id = getMediaObjectId(item);
-            const items = await this.api.getRadioTracks(id);
+            const items = await this.api.getSimilarSongs(id);
             return {items, atEnd: true};
         });
     }
+
+    createRelatedItemsPager<T extends MediaObject>(item: T): Pager<T> | undefined {
+        const id = getMediaObjectId(item);
+        switch (item.itemType) {
+            case ItemType.Artist:
+                return new SubsonicPager(this, ItemType.Artist, async () => {
+                    const items = await this.api.getSimilarArtists(id);
+                    return {items, atEnd: true};
+                });
+
+            case ItemType.Album:
+                return new SubsonicPager(this, ItemType.Album, async () => {
+                    let albumIds: string[] = [];
+                    const artistSrc = item.links?.artists?.[0];
+                    const artistId = artistSrc ? getMediaObjectId({src: artistSrc}) : '';
+                    const [similarArtists, ...similarSongs] = await Promise.all([
+                        artistId ? this.api.getSimilarArtists(artistId) : Promise.resolve([]),
+                        this.api.getSimilarSongs(id),
+                        artistId ? this.api.getSimilarSongs(artistId) : Promise.resolve([]),
+                    ]);
+                    if (similarArtists.length > 0) {
+                        const similarArtistAlbums = await Promise.all(
+                            similarArtists.map((artist) => this.api.getArtistAlbums(artist.id))
+                        );
+                        albumIds.push(...similarArtistAlbums.flat().map((album) => album.id));
+                    }
+                    albumIds.push(...similarSongs.flat().map((song) => song.albumId || ''));
+                    albumIds = albumIds.filter((albumId) => !!albumId && albumId !== id);
+                    const uniqueAlbumIds = uniqSortedByFrequency(albumIds, true);
+                    const items = await Promise.all(
+                        uniqueAlbumIds.slice(0, 10).map((id) => this.api.getAlbum(id))
+                    );
+                    return {items, atEnd: true};
+                });
+        }
+    }
+
     createSongsPager(item: MediaItem): Pager<MediaItem> {
         if (item.mediaType === MediaType.Video) {
             return new SimpleMediaPager(async () => [item]);
@@ -725,7 +768,7 @@ export default class SubsonicService implements PersonalMediaService {
 
     createTopTracksPager(id: string, name: string): Pager<MediaItem> {
         return new SubsonicPager(this, ItemType.Media, async () => {
-            const items = await this.api.getArtistTopTracks(id, name);
+            const items = await this.api.getTopSongs(id, name);
             return {items, atEnd: true};
         });
     }
@@ -783,8 +826,7 @@ export default class SubsonicService implements PersonalMediaService {
                 item = {
                     ...item,
                     // These values sometimes come through as `{}` from Ampache.
-                    description:
-                        typeof info.notes === 'string' ? getTextFromHtml(info.notes) : undefined,
+                    description: typeof info.notes === 'string' ? getTextFromHtml(info.notes) : '',
                     release_mbid:
                         item.release_mbid ||
                         (typeof info.musicBrainzId === 'string' ? info.musicBrainzId : undefined),
@@ -800,28 +842,16 @@ export default class SubsonicService implements PersonalMediaService {
                     (typeof info.musicBrainzId === 'string' ? info.musicBrainzId : undefined),
             };
         }
-        if ((itemType === ItemType.Media || itemType === ItemType.Album) && !item.shareLink) {
-            try {
-                const shareLink = await this.api.createShare(id);
-                item = {...item, shareLink};
-            } catch (err) {
-                this.logger.warn(err);
-                this.logger.info('Could not create share link');
-            }
-        }
-        if (item.inLibrary !== undefined && item.rating !== undefined) {
-            return item;
-        }
-        if (itemType === ItemType.Album) {
-            const album = await this.api.getAlbum(id);
-            return {...item, inLibrary: !!album.starred, rating: album.userRating || 0};
-        } else if (itemType === ItemType.Artist) {
-            const artist = await this.api.getArtist(id);
-            return {...item, inLibrary: !!artist.starred, rating: artist.userRating || 0};
-        } else {
-            const song = await this.api.getSong(id);
-            return {...item, inLibrary: !!song.starred, rating: song.userRating || 0};
-        }
+        // if ((itemType === ItemType.Media || itemType === ItemType.Album) && !item.shareLink) {
+        //     try {
+        //         const shareLink = await this.api.createShare(id);
+        //         item = {...item, shareLink};
+        //     } catch (err) {
+        //         this.logger.warn(err);
+        //         this.logger.info('Could not create share link');
+        //     }
+        // }
+        return item;
     }
 
     async getPlaybackType(item: MediaItem): Promise<PlaybackType> {

@@ -30,6 +30,7 @@ import {
     createArtistAlbumsPager,
     createPlaylistItemsPager,
     getGenres,
+    getIdFromSrc,
     sortAlbums,
     sortByTitle,
     sortTracks,
@@ -127,6 +128,31 @@ export function createSourceFromPin<T extends Pinnable>(pin: Pin): MediaSource<T
         childSort: ibroadcastPlaylistItemsSort.defaultSort,
         createChildPager: createPlaylistItemsPager,
     }) as MediaSource<T>;
+}
+
+export function createRelatedPlaylistsSource<T extends MediaObject>(
+    item: T
+): MediaSource<MediaPlaylist> | undefined {
+    const id = getIdFromSrc(item);
+    switch (item.itemType) {
+        case ItemType.Media:
+            {
+                const playlists = ibroadcastLibrary.getRelatedPlaylistsSync(id);
+                if (playlists.length > 0) {
+                    return {
+                        id: `${serviceId}/playlists`,
+                        title: 'Related Playlists',
+                        icon: 'playlist',
+                        itemType: ItemType.Playlist,
+
+                        search(): Pager<MediaPlaylist> {
+                            return new IBroadcastPager('playlists', async () => playlists);
+                        },
+                    };
+                }
+            }
+            break;
+    }
 }
 
 export const ibroadcastSearch: MediaMultiSource = {

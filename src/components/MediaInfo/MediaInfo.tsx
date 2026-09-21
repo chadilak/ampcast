@@ -19,6 +19,7 @@ import MediaSourceLabel from 'components/MediaSources/MediaSourceLabel';
 import TextBox from 'components/TextBox';
 import Time from 'components/Time';
 import ScrobblingOptions from './ScrobblingOptions';
+import useActiveItem from './useActiveItem';
 import './MediaInfo.scss';
 
 export interface MediaInfoProps<T extends MediaObject> {
@@ -30,21 +31,23 @@ export default function MediaInfo<T extends MediaObject>({
     item,
     scrobblingOptions,
 }: MediaInfoProps<T>) {
+    const activeItem = useActiveItem(item, true) as any; // TODO: Why?
+
     switch (item.itemType) {
         case ItemType.Media:
-            return <MediaItemInfo item={item} scrobblingOptions={scrobblingOptions} />;
+            return <MediaItemInfo item={activeItem} scrobblingOptions={scrobblingOptions} />;
 
         case ItemType.Artist:
-            return <ArtistInfo item={item} />;
+            return <ArtistInfo item={activeItem} />;
 
         case ItemType.Album:
-            return <AlbumInfo item={item} />;
+            return <AlbumInfo item={activeItem} />;
 
         case ItemType.Playlist:
-            return <PlaylistInfo item={item} />;
+            return <PlaylistInfo item={activeItem} />;
 
         case ItemType.Folder:
-            return <FolderInfo item={item} />;
+            return <FolderInfo item={activeItem} />;
     }
 }
 

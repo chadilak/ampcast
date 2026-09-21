@@ -10,7 +10,7 @@ import MediaType from 'types/MediaType';
 import Pager from 'types/Pager';
 import SortParams from 'types/SortParams';
 import Thumbnail from 'types/Thumbnail';
-import {exists, uniq} from 'utils';
+import {exists, filterNotEmpty, shuffle, uniq, uniqSortedByFrequency} from 'utils';
 import {localeCompare, sorter} from 'services/metadata';
 import SimpleMediaPager from 'services/pagers/SimpleMediaPager';
 import pinStore from 'services/pins/pinStore';
@@ -40,28 +40,130 @@ export function createMediaObject<T extends MediaObject>(
     }
 }
 
-function createMediaArtist(
-    id: number,
+export function createRelatedItemsPager<T extends MediaObject>(item: T): Pager<T> | undefined {
+    switch (item.itemType) {
+        case ItemType.Artist:
+            return createRelatedArtistsPager(item) as Pager<T>;
+
+        case ItemType.Album:
+            return createRelatedAlbumsPager(item) as Pager<T>;
+
+        case ItemType.Media:
+            return createRelatedMediaItemsPager(item) as Pager<T>;
+    }
+}
+
+function createRelatedArtistsPager(artist: MediaArtist): Pager<MediaArtist> | undefined {
+    return new SimpleMediaPager(async () => {
+        const library = await ibroadcastLibrary.load();
+        const artistId = getIdFromSrc(artist);
+        const tracks = library.tracks;
+        const tracksMap = tracks.map;
+        const similarTrackIds = getSimilarTrackIds(library, {
+            artistId,
+            genres: artist.genres,
+        });
+        const relatedArtistIds = similarTrackIds
+            .map((id) => tracks[id][tracksMap.artist_id])
+            .filter((id) => !!id);
+        const uniqueIds = uniqSortedByFrequency(relatedArtistIds, true).slice(0, 20);
+        return uniqueIds.map((id) => createMediaArtist(id, library));
+    });
+}
+
+function createRelatedAlbumsPager(album: MediaAlbum): Pager<MediaAlbum> | undefined {
+    return new SimpleMediaPager(async () => {
+        const library = await ibroadcastLibrary.load();
+        const albumId = getIdFromSrc(album);
+        const tracks = library.tracks;
+        const tracksMap = tracks.map;
+        const albums = library.albums;
+        const albumsMap = albums.map;
+        const artistId = albums[albumId][albumsMap.artist_id];
+        const similarTrackIds = getSimilarTrackIds(library, {
+            artistId,
+            albumId,
+            genres: album.genres,
+        });
+        const relatedAlbumIds = similarTrackIds
+            .map((id) => ibroadcastLibrary.getAlbumId(library, tracks[id][tracksMap.album_id]))
+            .filter((id) => !!id);
+        const uniqueIds = uniqSortedByFrequency(relatedAlbumIds, true).slice(0, 20);
+        return uniqueIds.map((id) => createMediaAlbum(id, library));
+    });
+}
+
+function createRelatedMediaItemsPager(item: MediaItem): Pager<MediaItem> | undefined {
+    return new SimpleMediaPager(async () => {
+        const library = await ibroadcastLibrary.load();
+        const trackId = getIdFromSrc(item);
+        const tracks = library.tracks;
+        const track = tracks[trackId];
+        const tracksMap = tracks.map;
+        const albumId = track[tracksMap.album_id];
+        const artistId = track[tracksMap.artist_id];
+        const similarTrackIds = getSimilarTrackIds(library, {
+            artistId,
+            albumId,
+            trackId,
+            genres: item.genres,
+            year: item.year,
+        });
+        return shuffle(similarTrackIds.slice(0, 20)).map((id) => createMediaItem(id, library));
+    });
+}
+
+interface GetSimilarTracksParams {
+    artistId: number;
+    albumId?: number;
+    trackId?: number;
+    genres?: readonly string[];
+    year?: number;
+}
+
+function getSimilarTrackIds(
     library: iBroadcast.Library,
-    albumSort?: SortParams
-): MediaArtist {
-    const artist = library.artists[id];
-    const map = library.artists.map;
-    const trackIds: number[] | undefined = artist[map.tracks];
-    const mediaArtist: Writable<SetOptional<MediaArtist, 'pager'>> = {
-        itemType: ItemType.Artist,
-        src: `${serviceId}:artist:${id}`,
-        externalUrl: trackIds ? getExternalUrl(id, 'artists') : undefined,
-        title: artist[map.name],
-        rating: artist[map.rating],
-        genres: getGenres('artists', artist, library, true),
-        thumbnails: createThumbnails(artist[map.artwork_id]),
-        links: {
-            self: artist[map.name] !== 'Various Artists',
-        },
-    };
-    mediaArtist.pager = createArtistAlbumsPager(mediaArtist as MediaArtist, albumSort);
-    return mediaArtist as MediaArtist;
+    {
+        artistId,
+        albumId,
+        trackId,
+        genres: [genre, ...additionalGenres] = [],
+        year,
+    }: GetSimilarTracksParams
+): readonly number[] {
+    if (!artistId || !genre) {
+        return [];
+    }
+    const tracks = library.tracks;
+    const tracksMap = tracks.map;
+    const albums = library.albums;
+    const albumsMap = albums.map;
+    const discIds = albumId ? ibroadcastLibrary.getAlbumDiscIds(library, albumId) : undefined;
+    let matches = Object.keys(tracks).filter(
+        (id) =>
+            id !== 'map' &&
+            tracks[id][tracksMap.artist_id] !== artistId &&
+            tracks[id][tracksMap.genre] === genre &&
+            (trackId === undefined ? true : id !== String(trackId)) &&
+            (discIds === undefined ? true : !discIds.includes(tracks[id][tracksMap.album_id]))
+    );
+    if (additionalGenres.length > 0) {
+        matches = filterNotEmpty(matches, (id) =>
+            tracks[id][tracksMap.genres_additional]?.some((genre: string) =>
+                additionalGenres.includes(genre)
+            )
+        );
+    }
+    if (year) {
+        matches = filterNotEmpty(matches, (id) => {
+            const matchYear =
+                tracks[id][tracksMap.year] ||
+                albums[tracks[id][tracksMap.album_id]]?.[albumsMap.year] ||
+                0;
+            return matchYear >= year - 10 && matchYear <= year + 10;
+        });
+    }
+    return matches.map(Number);
 }
 
 export function createArtistAlbumsPager(
@@ -150,6 +252,30 @@ export function createArtistAlbumsPager(
         };
         return albums.concat(allTracksAlbum);
     });
+}
+
+function createMediaArtist(
+    id: number,
+    library: iBroadcast.Library,
+    albumSort?: SortParams
+): MediaArtist {
+    const artist = library.artists[id];
+    const map = library.artists.map;
+    const trackIds: number[] | undefined = artist[map.tracks];
+    const mediaArtist: Writable<SetOptional<MediaArtist, 'pager'>> = {
+        itemType: ItemType.Artist,
+        src: `${serviceId}:artist:${id}`,
+        externalUrl: trackIds ? getExternalUrl(id, 'artists') : undefined,
+        title: artist[map.name],
+        rating: artist[map.rating],
+        genres: getGenres('artists', artist, library, true),
+        thumbnails: createThumbnails(artist[map.artwork_id]),
+        links: {
+            self: artist[map.name] !== 'Various Artists',
+        },
+    };
+    mediaArtist.pager = createArtistAlbumsPager(mediaArtist as MediaArtist, albumSort);
+    return mediaArtist as MediaArtist;
 }
 
 function createMediaAlbum(id: number, library: iBroadcast.Library): MediaAlbum {
@@ -243,7 +369,7 @@ export function createMediaItem(
     const map = tracks.map;
     const artistId = track[map.artist_id];
     const artist = artists[artistId];
-    const albumId = track[map.album_id];
+    const albumId = ibroadcastLibrary.getAlbumDiscIds(library, track[map.album_id])[0]; // Disc 1
     const album = albums[albumId];
     const albumArtistId = album?.[albums.map.artist_id];
     const albumArtist = artists[albumArtistId];
@@ -273,7 +399,7 @@ export function createMediaItem(
                   ? [albumArtist[artists.map.name]]
                   : undefined,
         track: track[map.track],
-        disc: album?.[albums.map.disc],
+        disc: albums[track[map.album_id]]?.[albums.map.disc], // Original disc.
         rating: track[map.rating],
         trackGain: isNaN(replayGain) ? undefined : replayGain,
         container,
@@ -319,13 +445,7 @@ export function getGenres<T extends iBroadcast.LibrarySection>(
             .filter(exists);
         if (trackGenres) {
             if (sorted) {
-                const genresMap = new Map<string, number>();
-                for (const trackGenre of trackGenres) {
-                    const count = genresMap.get(trackGenre) || 0;
-                    genresMap.set(trackGenre, count + 1);
-                }
-                const sorted = new Map([...genresMap].sort((a, b) => b[1] - a[1]));
-                genres = [...sorted.keys()];
+                genres = uniqSortedByFrequency(trackGenres);
             } else {
                 genres = uniq(trackGenres);
             }

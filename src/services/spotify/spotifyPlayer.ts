@@ -9,7 +9,6 @@ import {
     distinctUntilChanged,
     filter,
     firstValueFrom,
-    fromEvent,
     interval,
     map,
     merge,
@@ -207,9 +206,6 @@ export class SpotifyPlayer implements Player<MediaItem> {
                 tap(() => this.error$.next(Error('Not logged in')))
             )
             .subscribe(logger);
-
-        // Remove event listeners on page unload.
-        fromEvent(window, 'pagehide').subscribe(() => this.disconnect());
 
         // Log errors.
         this.observeError().subscribe(logger.error);

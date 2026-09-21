@@ -17,12 +17,11 @@ import ChildOf from 'types/ChildOf';
 import ItemType from 'types/ItemType';
 import MediaAlbum from 'types/MediaAlbum';
 import MediaObject from 'types/MediaObject';
-import MetadataChange from 'types/MetadataChange';
 import Pager, {PagerConfig} from 'types/Pager';
 import SortParams from 'types/SortParams';
 import {Logger, clamp, exists, uniq} from 'utils';
 import actionsStore from 'services/actions/actionsStore';
-import {observeMetadataChanges} from 'services/metadata';
+import {MetadataChange, observeMetadataChanges} from 'services/metadata';
 import {getServiceFromSrc} from 'services/mediaServices';
 import {observeSourceSorting} from 'services/mediaServices/servicesSettings';
 

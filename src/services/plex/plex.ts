@@ -19,6 +19,7 @@ import {getMediaObjectId, Logger} from 'utils';
 import actionsStore from 'services/actions/actionsStore';
 import {createRadioStation} from 'services/mediaServices/mediaSources';
 import fetchFirstPage, {fetchFirstItem} from 'services/pagers/fetchFirstPage';
+import {findMatches} from 'services/metadata';
 import SimpleMediaPager from 'services/pagers/SimpleMediaPager';
 import SimplePager from 'services/pagers/SimplePager';
 import {
@@ -91,6 +92,7 @@ const plex: PersonalMediaService = {
     compareForRating,
     createPlaylist,
     createRadioPager,
+    createRelatedItemsPager,
     createSongsPager,
     createSourceFromObject,
     createSourceFromPin,
@@ -176,7 +178,9 @@ function createRadioPager(item: MediaItem): Pager<MediaItem> {
                   params: {maxDistance: 0.5},
               });
               try {
-                  const items = await fetchFirstPage(pager);
+                  let items = await fetchFirstPage(pager);
+                  const duplicates = findMatches(items, item);
+                  items = items.filter((item) => !duplicates.includes(item));
                   return [item, ...items];
               } catch (err) {
                   logger.info('createRadioPager');
@@ -185,6 +189,25 @@ function createRadioPager(item: MediaItem): Pager<MediaItem> {
               }
           })
         : new PlexRadioPager(item.src);
+}
+
+function createRelatedItemsPager<T extends MediaObject>(item: T): Pager<T> | undefined {
+    const ratingKey = getMediaObjectId(item);
+    switch (item.itemType) {
+        case ItemType.Album:
+            if (plexSettings.sonicAnalysis) {
+                return new PlexPager<T>({
+                    path: `/library/metadata/${ratingKey}/nearest`,
+                    params: {maxDistance: 0.5},
+                });
+            }
+            break;
+
+        case ItemType.Artist:
+            return new PlexPager<T>({
+                path: `/library/metadata/${ratingKey}/similar`,
+            });
+    }
 }
 
 function createSongsPager(item: MediaItem): Pager<MediaItem> {

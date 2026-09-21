@@ -493,8 +493,8 @@ export function createArtistAlbumsPager(
         }
         const createSyntheticAlbums = (...albums: MediaAlbum[]) =>
             new SimpleMediaPager<MediaAlbum>(async () => {
-                const result = await Promise.all<MediaAlbum | undefined>([
-                    ...albums.map(async (album) => {
+                const result = await Promise.all<MediaAlbum | undefined>(
+                    albums.map(async (album) => {
                         try {
                             const items = await fetchFirstPage(album.pager, {keepAlive: true});
                             if (items.length === 0) {
@@ -506,8 +506,8 @@ export function createArtistAlbumsPager(
                             logger.error(err);
                             album.pager.disconnect();
                         }
-                    }),
-                ]);
+                    })
+                );
                 return result.filter(exists);
             });
         const videos = createArtistVideos(artist);

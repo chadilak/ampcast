@@ -7,6 +7,7 @@ import MediaDetails from 'components/MediaInfo/MediaDetails';
 import MediaInfo from 'components/MediaInfo';
 import Scrollable from 'components/Scrollable';
 import TabList, {TabItem} from 'components/TabList';
+import useFirstValue from 'hooks/useFirstValue';
 import RelatedItems from './RelatedItems';
 import RelatedPlaylists from './RelatedPlaylists';
 
@@ -28,17 +29,18 @@ export default function MediaObjectTabs<T extends MediaObject>({
     onSourceChange,
 }: MediaObjectTabsProps<T>) {
     const [currentSource, setCurrentSource] = useState<MediaSource<any> | undefined>(source);
+    const initialItem = useFirstValue(item); // Prevent re-renders if the object is updated.
 
     useEffect(() => {
         onSourceChange?.(currentSource);
     }, [currentSource, onSourceChange]);
 
     const relatedPlaylists = useMemo(() => {
-        return item ? service.createRelatedPlaylistsSource?.(item) : undefined;
-    }, [service, item]);
+        return initialItem ? service.createRelatedPlaylistsSource?.(initialItem) : undefined;
+    }, [service, initialItem]);
 
     const relatedItems = useMemo(() => {
-        const pager = item ? service.createRelatedItemsPager?.(item) : undefined;
+        const pager = initialItem ? service.createRelatedItemsPager?.(initialItem) : undefined;
         return pager
             ? {
                   ...source,
@@ -49,7 +51,7 @@ export default function MediaObjectTabs<T extends MediaObject>({
                   },
               }
             : undefined;
-    }, [service, source, item]);
+    }, [service, source, initialItem]);
 
     const tabs: TabItem[] = useMemo(() => {
         const tabs = [
@@ -63,7 +65,7 @@ export default function MediaObjectTabs<T extends MediaObject>({
                 id: 'media',
             },
         ];
-        if (item) {
+        if (initialItem) {
             if (relatedPlaylists) {
                 tabs.push({
                     tab: 'Playlists',
@@ -83,20 +85,20 @@ export default function MediaObjectTabs<T extends MediaObject>({
                     tab: 'Info',
                     panel: (
                         <Scrollable>
-                            <MediaInfo item={item} />
+                            <MediaInfo item={initialItem} />
                         </Scrollable>
                     ),
                     id: 'info',
                 },
                 {
                     tab: 'Details',
-                    panel: <MediaDetails item={item} />,
+                    panel: <MediaDetails item={initialItem} />,
                     id: 'details',
                 }
             );
         }
         return tabs;
-    }, [service, item, children, error, relatedPlaylists, relatedItems]);
+    }, [service, initialItem, children, error, relatedPlaylists, relatedItems]);
 
     const handleTabSelect = useCallback(
         (tabId?: string) => {

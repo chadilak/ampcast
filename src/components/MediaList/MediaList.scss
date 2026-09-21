@@ -678,7 +678,7 @@
     }
 
     .media-items:not(.multi-disc) & {
-        .disc {
+        .index .disc {
             display: none;
         }
     }

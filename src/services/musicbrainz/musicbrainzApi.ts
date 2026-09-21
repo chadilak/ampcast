@@ -6,8 +6,8 @@ import {Logger, RateLimiter, filterNotEmpty, uniq} from 'utils';
 import {
     AddMetadataOptions,
     dispatchMetadataChanges,
-    filterMatches,
     findBestMatch,
+    findMatches,
 } from 'services/metadata';
 import fetchFirstPage from 'services/pagers/fetchFirstPage';
 import MusicBrainzAlbumTracksPager from './MusicBrainzAlbumTracksPager';
@@ -454,7 +454,7 @@ async function fetchJSON<T>(
 }
 
 function findBestMBMatch(matches: readonly MBMediaItem[], item: MediaItem): MediaItem | undefined {
-    matches = filterMatches(matches, item);
+    matches = findMatches(matches, item);
     matches = filterNotEmpty(matches, (item) => item.musicBrainz.status === 'Official');
     matches = filterNotEmpty(matches, (item) => !item.musicBrainz.secondaryType);
     matches = filterNotEmpty(matches, (item) => item.musicBrainz.primaryType === 'Album');

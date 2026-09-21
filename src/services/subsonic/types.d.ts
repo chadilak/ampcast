@@ -1,7 +1,7 @@
 declare namespace Subsonic {
     interface Artist {
-        readonly albumCount: number;
-        readonly coverArt: string;
+        readonly albumCount?: number;
+        readonly coverArt?: string;
         readonly id: string;
         readonly name: string;
         readonly starred?: string;

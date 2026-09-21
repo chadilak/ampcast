@@ -18,6 +18,10 @@
         .scrollbar {
             display: none;
         }
+
+        .scrollable-content {
+            right: 0 !important;
+        }
     }
 
     .tooltip {

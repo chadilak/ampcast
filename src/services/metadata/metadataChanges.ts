@@ -3,12 +3,18 @@ import {Subject, filter, map, mergeMap} from 'rxjs';
 import MediaItem from 'types/MediaItem';
 import MediaObject from 'types/MediaObject';
 import MediaPlaylist from 'types/MediaPlaylist';
-import MetadataChange from 'types/MetadataChange';
+
+export interface MetadataChange<T extends MediaObject> {
+    readonly match: (object: MediaObject) => boolean;
+    readonly values: Partial<T>;
+}
 
 const changes$ = new Subject<readonly MetadataChange<any>[]>();
 
 export function dispatchMetadataChanges<T extends MediaObject>(change: MetadataChange<T>): void;
-export function dispatchMetadataChanges<T extends MediaObject>(changes: readonly MetadataChange<T>[]): void;
+export function dispatchMetadataChanges<T extends MediaObject>(
+    changes: readonly MetadataChange<T>[]
+): void;
 export function dispatchMetadataChanges<T extends MediaObject>(
     change: MetadataChange<T> | readonly MetadataChange<T>[]
 ): void {

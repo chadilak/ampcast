@@ -24,6 +24,7 @@ import {
 } from './ibroadcastAuth';
 import ibroadcastLibrary from './ibroadcastLibrary';
 import ibroadcastSources, {
+    createRelatedPlaylistsSource,
     createSourceFromObject,
     createSourceFromPin,
     ibroadcastPlaylists,
@@ -31,7 +32,7 @@ import ibroadcastSources, {
 } from './ibroadcastSources';
 import IBroadcastPager from './IBroadcastPager';
 import ibroadcastSettings from './ibroadcastSettings';
-import {getIdFromSrc, getLibrarySectionFromItem} from './ibroadcastUtils';
+import {createRelatedItemsPager, getIdFromSrc, getLibrarySectionFromItem} from './ibroadcastUtils';
 import {scrobble} from './ibroadcastScrobbler';
 import Credentials from './components/IBroadcastCredentials';
 import Login from './components/IBroadcastLogin';
@@ -68,6 +69,8 @@ const ibroadcast: PersonalMediaService = {
     canRate,
     compareForRating,
     createPlaylist,
+    createRelatedItemsPager,
+    createRelatedPlaylistsSource,
     createSourceFromObject,
     createSourceFromPin,
     deletePlaylist,

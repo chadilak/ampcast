@@ -11,7 +11,7 @@ export interface TabItem {
 
 export interface TabListProps {
     label: string;
-    items: TabItem[];
+    items: readonly TabItem[];
     className?: string;
     onTabIndexChange?: (tabIndex: number) => void;
     onTabSelect?: (tabId: string | undefined) => void;

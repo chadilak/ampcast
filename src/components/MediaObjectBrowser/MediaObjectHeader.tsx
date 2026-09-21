@@ -19,14 +19,14 @@ export default function MediaObjectHeader({source, item, children}: MediaObjectH
 
     const showMenu = useCallback(
         async ({target, x, y}: ShowActionsMenuParams<MediaObject>) => {
-            return item ? showHeaderMenu({source, item, syntheticAlbum, target, x, y}) : undefined;
+            return item ? showHeaderMenu({item, source, syntheticAlbum, target, x, y}) : undefined;
         },
         [source, item, syntheticAlbum]
     );
 
     return (
-        <header className="media-object-header">
-            <ShowActionsMenuContext value={showMenu}>{children}</ShowActionsMenuContext>
-        </header>
+        <ShowActionsMenuContext value={showMenu}>
+            <header className="media-object-header">{children}</header>
+        </ShowActionsMenuContext>
     );
 }

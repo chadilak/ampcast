@@ -447,15 +447,15 @@ async function search<T extends plex.RatingObject>(request: PlexRequest): Promis
                 )
                 .slice(0, 5);
             if (extraArtists.length > 0) {
-                const extraItems = await Promise.all([
-                    ...extraArtists.map((extraArtist) =>
+                const extraItems = await Promise.all(
+                    extraArtists.map((extraArtist) =>
                         plexApi.fetchJSON<plex.MetadataResponse<plex.Track>>({
                             ...request,
                             path: getMusicLibraryPath(),
                             params: {'artist.id': extraArtist.ratingKey, type: plexMediaType.Track},
                         })
-                    ),
-                ]);
+                    )
+                );
                 const tracks = extraItems
                     .map(({MediaContainer: {Metadata = []}}) => Metadata)
                     .flat() as T[];

@@ -2,7 +2,6 @@ import React, {useState} from 'react';
 import MediaObject from 'types/MediaObject';
 import MediaService from 'types/MediaService';
 import MediaSource from 'types/MediaSource';
-import useFirstValue from 'hooks/useFirstValue';
 import MediaObjectHeader from './MediaObjectHeader';
 import MediaObjectTabs from './MediaObjectTabs';
 import './MediaObjectBrowser.scss';
@@ -24,7 +23,6 @@ export default function MediaObjectBrowser<T extends MediaObject>({
     children,
     error,
 }: MediaObjectBrowserProps<T>) {
-    const initialItem = useFirstValue(item); // Prevent re-renders if the object is updated.
     const [currentSource, setCurrentSource] = useState<MediaSource<any> | undefined>(source);
 
     return (
@@ -36,7 +34,7 @@ export default function MediaObjectBrowser<T extends MediaObject>({
                 <MediaObjectTabs
                     service={service}
                     source={source}
-                    item={initialItem}
+                    item={item}
                     error={error}
                     onSourceChange={setCurrentSource}
                 >

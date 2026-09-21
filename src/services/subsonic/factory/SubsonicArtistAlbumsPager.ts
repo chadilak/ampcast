@@ -33,7 +33,7 @@ export default class SubsonicArtistAlbumsPager extends SimpleMediaPager<MediaAlb
             const chunks = chunk(albums, 5);
             for (const albums of chunks) {
                 const songs = await Promise.all(
-                    albums.map((album) => this.api.getAlbumTracks(album.id, album.isDir))
+                    albums.map((album) => this.api.getAlbumTracks(album.id))
                 );
                 for (const song of songs.flat()) {
                     const album = albums.find((album) => song.albumId === album.id);

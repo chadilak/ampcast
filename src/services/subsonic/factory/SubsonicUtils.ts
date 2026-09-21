@@ -324,7 +324,7 @@ export default class SubsonicUtils {
     }
 
     private createAlbumTracksPager(album: Subsonic.Album): Pager<MediaItem> {
-        if (album.song) {
+        if (album.song && album.song.length === album.songCount) {
             return new SimplePager(
                 album.song.map((song) => this.createMediaObject(ItemType.Media, song) as MediaItem)
             );
@@ -333,7 +333,7 @@ export default class SubsonicUtils {
                 this.service,
                 ItemType.Media,
                 async (): Promise<Page<Subsonic.MediaItem>> => {
-                    const items = await this.api.getAlbumTracks(album.id, album.isDir);
+                    const items = await this.api.getAlbumTracks(album.id);
                     return {items, atEnd: true};
                 }
             );
