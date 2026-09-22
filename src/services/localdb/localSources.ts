@@ -212,7 +212,7 @@ function createUnscrobbled(scrobblerId: ScrobblerId, title: string): MediaSource
                 views: [],
             },
             itemKey: 'playedAt',
-            emptyMessage: 'No unscrobbled tracks',
+            emptyMessage: 'No unscrobbled tracks.',
         },
 
         search(): Pager<Listen> {

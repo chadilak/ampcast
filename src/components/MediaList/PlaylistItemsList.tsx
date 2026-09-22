@@ -133,7 +133,7 @@ export default function PlaylistItemsList({
         <MediaItemList
             {...props}
             className="playlist-items"
-            emptyMessage="Empty playlist"
+            emptyMessage="Empty playlist."
             source={source}
             pager={pager}
             parent={playlist}

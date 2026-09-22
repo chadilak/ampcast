@@ -712,7 +712,12 @@ export default class SubsonicService implements PersonalMediaService {
                         );
                         albumIds.push(...similarArtistAlbums.flat().map((album) => album.id));
                     }
-                    albumIds.push(...similarSongs.flat().map((song) => song.albumId || ''));
+                    albumIds.push(
+                        ...similarSongs
+                            .flat()
+                            .filter((song) => song.artistId !== artistId)
+                            .map((song) => song.albumId || '')
+                    );
                     albumIds = albumIds.filter((albumId) => !!albumId && albumId !== id);
                     const uniqueAlbumIds = uniqSortedByFrequency(albumIds, true);
                     const items = await Promise.all(

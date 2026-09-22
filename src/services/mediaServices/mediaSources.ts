@@ -30,7 +30,7 @@ export function createSingularMediaSource<T extends MediaObject>({
     isPin = false,
     childSort,
     createChildPager,
-    ...rest
+    ...params
 }: CreateSingularMediaSourceParams<T>): MediaSource<T> {
     if (isPin && itemType !== ItemType.Playlist) {
         throw Error('Unsupported Pin type.');
@@ -46,7 +46,7 @@ export function createSingularMediaSource<T extends MediaObject>({
         singular: true,
         title: '',
         icon: serviceId as MediaServiceId,
-        ...rest,
+        ...params,
         search() {
             return new SimpleMediaPager(
                 async () => {

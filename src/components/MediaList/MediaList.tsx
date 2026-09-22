@@ -154,9 +154,13 @@ export default function MediaList<T extends MediaObject>({
 
     useEffect(() => {
         // Turns autofill on/off.
-        pager?.activate?.();
-        return () => pager?.deactivate?.();
-    }, [pager]);
+        if (inactive) {
+            pager?.deactivate?.();
+        } else {
+            pager?.activate?.();
+            return () => pager?.deactivate?.();
+        }
+    }, [pager, inactive]);
 
     useEffect(() => {
         if (success && onLoad) {

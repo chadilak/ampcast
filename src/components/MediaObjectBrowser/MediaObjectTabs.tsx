@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import ItemType from 'types/ItemType';
 import MediaObject from 'types/MediaObject';
 import MediaService from 'types/MediaService';
 import MediaSource from 'types/MediaSource';
@@ -69,7 +70,17 @@ export default function MediaObjectTabs<T extends MediaObject>({
             if (relatedPlaylists) {
                 tabs.push({
                     tab: 'Playlists',
-                    panel: <RelatedPlaylists service={service} source={relatedPlaylists} />,
+                    panel: (
+                        <RelatedPlaylists
+                            service={service}
+                            source={relatedPlaylists}
+                            emptyMessage={
+                                initialItem.itemType === ItemType.Media
+                                    ? 'Not featured on any playlists.'
+                                    : 'No playlists found.'
+                            }
+                        />
+                    ),
                     id: 'playlists',
                 });
             }

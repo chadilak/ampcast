@@ -25,7 +25,7 @@ export interface LoginDialogProps extends DialogProps {
 }
 
 export default function LoginDialog({service, settings, login, ...props}: LoginDialogProps) {
-    const id = service.id;
+    const serviceId = service.id;
     const [connecting, setConnecting] = useState(false);
     const [message, setMessage] = useState('');
     const dialogRef = useRef<HTMLDialogElement>(null);
@@ -33,8 +33,8 @@ export default function LoginDialog({service, settings, login, ...props}: LoginD
     const userNameRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
     const useProxyRef = useRef<HTMLInputElement>(null);
-    const canUseProxy = hasProxyLogin(service.id);
-    const locked = isServerLocked(service.id);
+    const canUseProxy = hasProxyLogin(serviceId);
+    const locked = isServerLocked(serviceId);
     const useManualLogin = settings.useManualLogin && !locked;
     const [useProxy, setUseProxy] = useState(() => canUseProxy && !useManualLogin);
     const initialUseProxy = useFirstValue(useProxy);
@@ -104,78 +104,80 @@ export default function LoginDialog({service, settings, login, ...props}: LoginD
     return (
         <Dialog
             {...props}
-            className={`login-dialog login-dialog-${id}`}
+            className={`login-dialog login-dialog-${serviceId}`}
             icon={service.icon}
             title={`Connect to ${service.name}`}
             ref={dialogRef}
         >
-            <form id={`${id}-login`} method="dialog" onSubmit={handleSubmit}>
+            <form id={`${serviceId}-login`} method="dialog" onSubmit={handleSubmit}>
                 {canUseProxy ? (
                     <>
                         <p>
                             <input
                                 type="radio"
-                                name={`${id}-login-type`}
-                                id={`${id}-login-proxy`}
+                                name={`${serviceId}-login-type`}
+                                id={`${serviceId}-login-proxy`}
                                 defaultChecked={!useManualLogin}
                                 onChange={handleLoginTypeChange}
                                 ref={useProxyRef}
                             />
-                            <label htmlFor={`${id}-login-proxy`}>Default login</label>
+                            <label htmlFor={`${serviceId}-login-proxy`}>Default login</label>
                         </p>
                         <p>
                             <input
                                 type="radio"
-                                name={`${id}-login-type`}
-                                id={`${id}-login-manual`}
+                                name={`${serviceId}-login-type`}
+                                id={`${serviceId}-login-manual`}
                                 defaultChecked={useManualLogin}
                                 disabled={locked}
                                 onChange={handleLoginTypeChange}
                             />
-                            <label htmlFor={`${id}-login-manual`}>Advanced login:</label>
+                            <label htmlFor={`${serviceId}-login-manual`}>Advanced login:</label>
                         </p>
                     </>
                 ) : null}
                 <div className="table-layout">
                     <p>
-                        <label htmlFor={`${id}-host`}>Host:</label>
+                        <label htmlFor={`${serviceId}-host`}>Host:</label>
                         <input
                             type="url"
-                            id={`${id}-host`}
-                            name={`${id}-host`}
+                            id={`${serviceId}-host`}
+                            name={`${serviceId}-host`}
                             defaultValue={settings.host}
                             disabled={useProxy}
                             placeholder="http://"
-                            autoComplete={useProxy ? 'off' : `section-${id} url`}
+                            autoComplete={useProxy ? 'off' : `section-${serviceId} url`}
                             readOnly={locked}
                             required
                             ref={hostRef}
                         />
                     </p>
                     <p>
-                        <label htmlFor={`${id}-username`}>User:</label>
+                        <label htmlFor={`${serviceId}-username`}>User:</label>
                         <input
                             type="text"
-                            id={`${id}-username`}
-                            name={`${id}-username`}
+                            id={`${serviceId}-username`}
+                            name={`${serviceId}-username`}
                             defaultValue={initialUseProxy ? '' : settings.userName}
                             disabled={useProxy}
                             spellCheck={false}
-                            autoComplete={useProxy ? 'off' : `section-${id} username`}
+                            autoComplete={useProxy ? 'off' : `section-${serviceId} username`}
                             autoCapitalize="off"
                             required
                             ref={userNameRef}
                         />
                     </p>
                     <p>
-                        <label htmlFor={`${id}-password`}>Password:</label>
+                        <label htmlFor={`${serviceId}-password`}>Password:</label>
                         <input
                             type="password"
-                            id={`${id}-password`}
-                            name={`${id}-password`}
+                            id={`${serviceId}-password`}
+                            name={`${serviceId}-password`}
                             disabled={useProxy}
                             ref={passwordRef}
-                            autoComplete={useProxy ? 'off' : `section-${id} current-password`}
+                            autoComplete={
+                                useProxy ? 'off' : `section-${serviceId} current-password`
+                            }
                             required
                         />
                     </p>

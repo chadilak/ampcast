@@ -1,5 +1,4 @@
 import React, {useCallback} from 'react';
-import {cancelEvent} from 'utils';
 import {WEB_LINKS} from 'services/features';
 import useHistory from 'components/MediaBrowser/useHistory';
 import './InternalLink.scss';
@@ -17,6 +16,13 @@ export default function InternalLink({path, className, children}: InternalLinkPr
         navigateTo(path);
     }, [navigateTo, path]);
 
+    const handleMouseDown = useCallback((event:React.MouseEvent) => {
+        if (event.button === 0) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }, []);
+
     return !WEB_LINKS || isSamePath(path, currentPath) ? (
         <span className={className}>{children}</span>
     ) : (
@@ -25,7 +31,7 @@ export default function InternalLink({path, className, children}: InternalLinkPr
             href={`#!/${path}`}
             tabIndex={-1}
             onClick={handleClick}
-            onMouseDown={cancelEvent}
+            onMouseDown={handleMouseDown}
         >
             {children}
         </a>

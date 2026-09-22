@@ -37,6 +37,7 @@ import {
 import NavidromeIndexedPager from './NavidromeIndexedPager';
 import navidromeSettings from './navidromeSettings';
 import navidromeSources, {
+    createRelatedPlaylistsSource,
     createSourceFromObject,
     createSourceFromPin,
     navidromePlaylists,
@@ -91,6 +92,8 @@ const navidrome: PersonalMediaService = {
     canStore,
     compareForRating,
     createPlaylist,
+    createRelatedItemsPager,
+    createRelatedPlaylistsSource,
     createSourceFromObject,
     createSourceFromPin,
     editPlaylist,
@@ -216,6 +219,10 @@ async function getMediaObject<T extends MediaObject>(src: string): Promise<T> {
 
 function createRadioPager(item: MediaItem): Pager<MediaItem> {
     return subsonicService.createRadioPager(item);
+}
+
+function  createRelatedItemsPager<T extends MediaObject>(item: T): Pager<T> | undefined {
+    return subsonicService.createRelatedItemsPager(item);
 }
 
 function createSongsPager(item: MediaItem): Pager<MediaItem> {

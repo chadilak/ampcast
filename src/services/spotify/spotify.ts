@@ -15,7 +15,7 @@ import {chunk, getMediaObjectId} from 'utils';
 import actionsStore from 'services/actions/actionsStore';
 import {dispatchMetadataChanges} from 'services/metadata';
 import fetchAllTracks from 'services/pagers/fetchAllTracks';
-import fetchFirstPage, {fetchFirstItem} from 'services/pagers/fetchFirstPage';
+import fetchFirstPage from 'services/pagers/fetchFirstPage';
 import SimplePager from 'services/pagers/SimplePager';
 import {
     observeConnecting,
@@ -27,8 +27,7 @@ import {
     logout,
     reconnect,
 } from './spotifyAuth';
-import spotifyApi from './spotifyApi';
-import SpotifyPager, {SpotifyPage} from './SpotifyPager';
+import spotifyApi, {SpotifyItem} from './spotifyApi';
 import spotifySettings from './spotifySettings';
 import spotifySources, {
     createSearchPager,
@@ -37,7 +36,7 @@ import spotifySources, {
     spotifyEditablePlaylists,
     spotifySearch,
 } from './spotifySources';
-import {createMediaItemFromTrack} from './spotifyUtils';
+import {createMediaItemFromTrack, createMediaObject} from './spotifyUtils';
 import Credentials from './components/SpotifyCredentials';
 import Login from './components/SpotifyLogin';
 import './bootstrap';
@@ -274,31 +273,12 @@ async function addUserData<T extends MediaObject>(items: readonly T[]): Promise<
 }
 
 async function getMediaObject<T extends MediaObject>(src: string): Promise<T> {
-    const pager = new SpotifyPager<T>(async (): Promise<SpotifyPage> => {
-        const fetchItem = () => {
-            src = getSrcFromUrl(src);
-            const [, type, id] = src.split(':');
-            switch (type) {
-                case 'album':
-                    return spotifyApi.getAlbum(id);
-
-                case 'artist':
-                    return spotifyApi.getArtist(id);
-
-                case 'playlist':
-                    return spotifyApi.getPlaylist(id);
-
-                case 'track':
-                    return spotifyApi.getTrack(id);
-
-                default:
-                    throw Error(`Unsupported type: '${type}'`);
-            }
-        };
-        const item = await fetchItem();
-        return {items: [item], total: 1, atEnd: true};
-    });
-    return fetchFirstItem<T>(pager, {timeout: 2000});
+    const [, type, id] = src.split(':');
+    const [object, [inLibrary]] = await Promise.all([
+        spotifyApi.get<SpotifyItem>(`/${type}s/${id}`),
+        spotifyApi.getLibraryContains([src]),
+    ]);
+    return createMediaObject(object, inLibrary);
 }
 
 async function getPlaybackType(): Promise<PlaybackType> {

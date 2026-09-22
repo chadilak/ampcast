@@ -1,4 +1,5 @@
 import type {Observable} from 'rxjs';
+import type {BaseItemDto} from '@jellyfin/sdk/lib/generated-client';
 import Action from 'types/Action';
 import CreatePlaylistOptions from 'types/CreatePlaylistOptions';
 import FilterType from 'types/FilterType';
@@ -22,9 +23,10 @@ import embyScrobbler from 'services/emby/embyScrobbler';
 import {createRadioStation} from 'services/mediaServices/mediaSources';
 import SimpleMediaPager from 'services/pagers/SimpleMediaPager';
 import SimplePager from 'services/pagers/SimplePager';
-import fetchFirstPage, {fetchFirstItem} from 'services/pagers/fetchFirstPage';
+import fetchFirstPage from 'services/pagers/fetchFirstPage';
 import {t} from 'services/i18n';
-import {bestOf} from 'services/metadata';
+import {bestOf, findMatches} from 'services/metadata';
+import WrappedPager from 'services/pagers/WrappedPager';
 import {
     observeConnecting,
     observeConnectionLogging,
@@ -39,12 +41,14 @@ import jellyfinSettings from './jellyfinSettings';
 import JellyfinPager from './JellyfinPager';
 import jellyfinApi from './jellyfinApi';
 import jellyfinSources, {
+    createRelatedPlaylistsSource,
     createSearchPager,
     createSourceFromObject,
     createSourceFromPin,
     jellyfinEditablePlaylists,
     jellyfinSearch,
 } from './jellyfinSources';
+import {createArtistVideosPager, createMediaObject, createRelatedItemsPager} from './jellyfinUtils';
 
 const serviceId: MediaServiceId = 'jellyfin';
 
@@ -89,6 +93,8 @@ const jellyfin: PersonalMediaService = {
     compareForRating,
     createPlaylist,
     createRadioPager,
+    createRelatedItemsPager,
+    createRelatedPlaylistsSource,
     createSongsPager,
     createSourceFromObject,
     createSourceFromPin,
@@ -169,18 +175,33 @@ function createRadioPager(item: MediaItem): Pager<MediaItem> {
 }
 
 function createSongsPager(item: MediaItem): Pager<MediaItem> {
+    const songsPager = new SimpleMediaPager(async () => [item]);
     if (item.mediaType === MediaType.Video) {
-        return new SimpleMediaPager(async () => [item]);
+        return songsPager;
     } else {
-        return new SimpleMediaPager(async () => {
+        const radiosPager = new SimpleMediaPager(async () => {
             const id = getMediaObjectId(item);
             const radio = createRadioStation({
                 src: `${serviceId}:song-radio:${id}`,
                 title: `${item.title} - Radio`,
                 thumbnails: item.thumbnails,
             });
-            return [item, radio];
+            return [radio];
         });
+        const audiosPager = new WrappedPager(undefined, songsPager, radiosPager);
+        if (jellyfinSettings.videoLibraryId) {
+            const artistLink = item.links?.artists?.[0];
+            if (artistLink) {
+                const videosPager = new SimpleMediaPager<MediaItem>(async () => {
+                    const [, , artistId] = artistLink.split(':');
+                    const artistVideosPager = createArtistVideosPager(artistId);
+                    const artistVideos = await fetchFirstPage(artistVideosPager);
+                    return findMatches(artistVideos, item);
+                });
+                return new WrappedPager(undefined, audiosPager, videosPager);
+            }
+        }
+        return audiosPager;
     }
 }
 
@@ -215,11 +236,10 @@ async function addMetadata<T extends MediaObject>(item: T): Promise<T> {
 
 async function getMediaObject<T extends MediaObject>(src: string): Promise<T> {
     const id = getIdFromSrc({src});
-    const pager = new JellyfinPager<T>(`Users/${jellyfinSettings.userId}/Items/${id}`, undefined, {
-        pageSize: 1,
-        maxSize: 1,
-    });
-    return fetchFirstItem<T>(pager, {timeout: 2000});
+    const object = await jellyfinApi.get<BaseItemDto>(
+        `Users/${jellyfinSettings.userId}/Items/${id}`
+    );
+    return createMediaObject(object);
 }
 
 function getPlayableUrl(item: MediaItem): string {

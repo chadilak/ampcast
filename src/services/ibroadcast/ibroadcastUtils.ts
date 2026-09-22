@@ -354,7 +354,7 @@ export function createPlaylistItemsPager(
     itemSort?: SortParams
 ): Pager<MediaItem> {
     const id = getIdFromSrc(playlist);
-    return new IBroadcastPlaylistItemsPager(id, itemSort, {autofill: true, autofillMaxPages: 100});
+    return new IBroadcastPlaylistItemsPager(id, itemSort);
 }
 
 export function createMediaItem(

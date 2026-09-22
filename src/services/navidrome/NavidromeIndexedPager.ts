@@ -36,12 +36,12 @@ export default class NavidromeIndexedPager<T extends MediaObject> extends Indexe
                 });
                 if (
                     path === 'song' &&
-                    params?.title &&
+                    params?.title && // Song search.
                     !this.passive &&
                     pageNumber === 1 &&
                     items.length < pageSize
                 ) {
-                    // Fetch enhanced results if we have fewer items than the page size.
+                    // Fetch enhanced search results if we have fewer items than the page size.
                     items = this.refineTracksSearchResults(
                         params.title as string,
                         items as Navidrome.Song[]

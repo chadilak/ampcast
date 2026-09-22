@@ -108,7 +108,7 @@ export function getMediaLabel(itemType: ItemType, serviceId?: string): string {
 export function getMediaObjectId(object: {src: string}): string {
     const [serviceId, , ...rest] = object.src.split(':');
     if (serviceId === 'emby') {
-        return rest[0];
+        return rest[0] || '';
     } else {
         return rest.join(':');
     }

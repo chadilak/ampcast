@@ -16,11 +16,13 @@ import ParentOf from 'types/ParentOf';
 import PlaybackType from 'types/PlaybackType';
 import SortParams from 'types/SortParams';
 import Thumbnail from 'types/Thumbnail';
-import {getMediaObjectId, uniq} from 'utils';
+import {exists, getMediaObjectId, Logger, uniq} from 'utils';
 import {MAX_DURATION} from 'services/constants';
+import fetchFirstPage from 'services/pagers/fetchFirstPage';
 import pinStore from 'services/pins/pinStore';
-import stationStore from 'services/internetRadio/stationStore';
+import SimpleMediaPager from 'services/pagers/SimpleMediaPager';
 import SimplePager from 'services/pagers/SimplePager';
+import stationStore from 'services/internetRadio/stationStore';
 import WrappedPager from 'services/pagers/WrappedPager';
 import JellyfinPager, {JellyfinPlaylistItemsPager} from './JellyfinPager';
 import jellyfinApi from './jellyfinApi';
@@ -33,6 +35,8 @@ import {
 } from './jellyfinSorting';
 
 type LegacyBaseItemDto = BaseItemDto & {LUFS?: number | null};
+
+const logger = new Logger('jellyfinUtils');
 
 const serviceId: MediaServiceId = 'jellyfin';
 
@@ -61,6 +65,22 @@ export function createMediaObject<T extends MediaObject>(
     }
 }
 
+export function createRelatedItemsPager<T extends MediaObject>(item: T): Pager<T> | undefined {
+    const id = getMediaObjectId(item);
+    switch (item.itemType) {
+        case ItemType.Artist:
+            return new JellyfinPager(`Items/${id}/Similar`, {
+                UserId: jellyfinSettings.userId,
+            }) as Pager<T>;
+
+        case ItemType.Album:
+            return new JellyfinPager(`Items/${id}/Similar`, {
+                ExcludeArtistIds: getMediaObjectId({src: item.links?.artists?.[0] || ''}),
+                UserId: jellyfinSettings.userId,
+            }) as Pager<T>;
+    }
+}
+
 export async function getAlbums(items: readonly BaseItemDto[]): Promise<readonly BaseItemDto[]> {
     const tracks = items.filter((item) => item.Type === 'Audio');
     const albumIds = uniq(tracks.map((track) => track.AlbumId));
@@ -81,6 +101,7 @@ function createMediaArtist(artist: BaseItemDto, albumSort?: SortParams): MediaAr
         src: `${serviceId}:artist:${artist.Id}`,
         externalUrl: getExternalUrl(artist),
         title: artist.Name || '',
+        description: artist.Overview || undefined,
         playCount: artist.UserData?.PlayCount || undefined,
         genres: artist.Genres || undefined,
         thumbnails: createThumbnails(artist),
@@ -213,17 +234,12 @@ function createMediaItem(track: LegacyBaseItemDto): MediaItem {
                   : undefined
             : track.Container || undefined,
         container: track.Container || undefined,
-        links: isVideo
-            ? undefined
-            : {
-                  self: true,
-                  album:
-                      track.Album && track.AlbumId
-                          ? `${serviceId}:album:${track.AlbumId}`
-                          : undefined,
-                  albumArtists: albumArtists?.map((artist) => getArtistLink(artist)),
-                  artists: artists?.map((artist) => getArtistLink(artist)),
-              },
+        links: {
+            self: true,
+            album: track.Album && track.AlbumId ? `${serviceId}:album:${track.AlbumId}` : undefined,
+            albumArtists: albumArtists?.map((artist) => getArtistLink(artist)),
+            artists: artists?.map((artist) => getArtistLink(artist)),
+        },
     };
 }
 
@@ -264,11 +280,31 @@ export function createArtistAlbumsPager(
     if (artist.title === 'Various Artists') {
         return albumsPager;
     }
+    const createSyntheticAlbums = (...albums: MediaAlbum[]) =>
+        new SimpleMediaPager<MediaAlbum>(async () => {
+            const result = await Promise.all<MediaAlbum | undefined>(
+                albums.map(async (album) => {
+                    try {
+                        const items = await fetchFirstPage(album.pager, {keepAlive: true});
+                        if (items.length === 0) {
+                            album.pager.disconnect();
+                        } else {
+                            return album;
+                        }
+                    } catch (err) {
+                        logger.error(err);
+                        album.pager.disconnect();
+                    }
+                })
+            );
+            return result.filter(exists);
+        });
     const allTracks = createArtistAllTracks(artist);
     const allTracksPager = new SimplePager<MediaAlbum>([allTracks]);
     const radios = createArtistRadios(artist);
-    const radiosPager = new SimplePager<MediaAlbum>([ radios]);
-    return new WrappedPager(radiosPager, albumsPager, allTracksPager);
+    const videos = createArtistVideos(artist);
+    const topPager = createSyntheticAlbums(videos, radios);
+    return new WrappedPager(topPager, albumsPager, allTracksPager);
 }
 
 function createArtistAllTracks(artist: MediaArtist): MediaAlbum {
@@ -298,6 +334,32 @@ function createAllTracksPager(artist: MediaArtist): Pager<MediaItem> {
         },
         {autofill: true}
     );
+}
+
+function createArtistVideos(artist: MediaArtist): MediaAlbum {
+    const artistId = getMediaObjectId(artist);
+    return {
+        itemType: ItemType.Album,
+        src: `${serviceId}:videos:${artistId}`,
+        title: 'Music Videos',
+        artists: [artist.title],
+        thumbnails: artist.thumbnails,
+        pager: createArtistVideosPager(artistId),
+        trackCount: undefined,
+        synthetic: true,
+        links: {
+            artists: [artist.src],
+        },
+    };
+}
+
+export function createArtistVideosPager(artistId: string): Pager<MediaItem> {
+    return new JellyfinPager(`Users/${jellyfinSettings.userId}/Items`, {
+        IncludeItemTypes: 'MusicVideo',
+        ArtistIds: artistId,
+        SortBy: 'ProductionYear,PremiereDate,SortName',
+        SortOrder: 'Descending,Descending,Ascending',
+    });
 }
 
 function createArtistRadios(artist: MediaArtist): MediaAlbum {

@@ -147,10 +147,8 @@ export default class SubsonicApi {
     }
 
     async getAlbumTracks(id: string): Promise<Subsonic.Song[]> {
-        console.log('getAlbumTracks-1', {id});
         const album = await this.getAlbum(id);
         if (!album.song || (album.songCount && album.song.length !== album.songCount)) {
-            console.log('getAlbumTracks-2', {album});
             // Search for the album instead. And get the tracks by directory.
             const albums = await this.searchAlbums2(album.name);
             const [dirId, ...dirIds] = albums.map((album) => album.id);

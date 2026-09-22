@@ -8,11 +8,8 @@ import useFirstValue from 'hooks/useFirstValue';
 export default function RelatedPlaylists({
     service,
     source,
-    emptyMessage = 'No playlists found',
+    ...props
 }: Except<PagedItemsProps<MediaPlaylist>, 'pager'>) {
     const pager = useFirstValue(source.search());
-
-    return (
-        <Playlists service={service} source={source} pager={pager} emptyMessage={emptyMessage} />
-    );
+    return <Playlists {...props} service={service} source={source} pager={pager} />;
 }

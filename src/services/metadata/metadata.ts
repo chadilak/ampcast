@@ -115,6 +115,27 @@ export function bestOf<T extends MediaObject>(a: T, b: Partial<T> = {}): T {
     return result;
 }
 
+export function createLookupFromTitle(text = ''): MediaItem | null {
+    const [artist, title] = splitTitle(text);
+    return createLookupItem(artist, title);
+}
+
+function createLookupItem(artist = '', title = ''): MediaItem | null {
+    if (artist && title) {
+        return {
+            title,
+            artists: [artist],
+            src: '',
+            itemType: ItemType.Media,
+            mediaType: MediaType.Audio,
+            duration: 0,
+            playedAt: 0,
+        };
+    } else {
+        return null;
+    }
+}
+
 export async function createMediaItemFromTitle(text = ''): Promise<MediaItem | null> {
     const [artist, title] = splitTitle(text);
     return createMediaItemFromArtistAndTitle(artist, title);
@@ -124,16 +145,8 @@ export async function createMediaItemFromArtistAndTitle(
     artist = '',
     title = ''
 ): Promise<MediaItem | null> {
-    if (artist && title) {
-        const lookupItem: MediaItem = {
-            title,
-            artists: [artist],
-            src: '',
-            itemType: ItemType.Media,
-            mediaType: MediaType.Audio,
-            duration: 0,
-            playedAt: 0,
-        };
+    const lookupItem = createLookupItem(artist, title);
+    if (lookupItem) {
         const foundItem = await addMetadata(lookupItem);
         if (foundItem === lookupItem) {
             return null;

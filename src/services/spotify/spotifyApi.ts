@@ -371,6 +371,7 @@ const spotifyApi = {
     getArtist,
     getArtistAlbums,
     getArtistTopTracks,
+    get,
     getMe,
     getMyAlbums,
     getMyPlaylists,

@@ -79,7 +79,7 @@ export default function DefaultBrowser({service, source}: MediaBrowserProps) {
                 source={selectedSource}
                 pager={pager}
                 loadingText={query ? 'Searching' : undefined}
-                emptyMessage={query ? 'No results' : undefined}
+                emptyMessage={query ? 'No results.' : undefined}
                 isSearchResult={isSearch}
                 key={`${selectedSource?.id}?q=${query}`}
             />

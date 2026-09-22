@@ -15,13 +15,14 @@ import PersonalMediaLibrary from 'types/PersonalMediaLibrary';
 import PersonalMediaService from 'types/PersonalMediaService';
 import PlaybackType from 'types/PlaybackType';
 import ServiceType from 'types/ServiceType';
-import {getMediaObjectId, Logger} from 'utils';
+import {exists, getMediaObjectId, Logger} from 'utils';
 import actionsStore from 'services/actions/actionsStore';
 import {createRadioStation} from 'services/mediaServices/mediaSources';
-import fetchFirstPage, {fetchFirstItem} from 'services/pagers/fetchFirstPage';
-import {findMatches} from 'services/metadata';
+import fetchFirstPage from 'services/pagers/fetchFirstPage';
+import {createLookupFromTitle, findMatches} from 'services/metadata';
 import SimpleMediaPager from 'services/pagers/SimpleMediaPager';
 import SimplePager from 'services/pagers/SimplePager';
+import WrappedPager from 'services/pagers/WrappedPager';
 import {
     observeConnecting,
     observeConnectionLogging,
@@ -45,6 +46,7 @@ import plexSources, {
     plexSearch,
 } from './plexSources';
 import ServerSettings from './components/PlexServerSettings';
+import {createMediaObject, getMediaAlbums} from './plexUtils';
 
 const serviceId: MediaServiceId = 'plex';
 
@@ -211,18 +213,39 @@ function createRelatedItemsPager<T extends MediaObject>(item: T): Pager<T> | und
 }
 
 function createSongsPager(item: MediaItem): Pager<MediaItem> {
-    if (plexSettings.sonicAnalysis && item.mediaType !== MediaType.Video) {
-        return new SimpleMediaPager(async () => {
+    const songsPager = new SimpleMediaPager(async () => [item]);
+    if (item.mediaType === MediaType.Video) {
+        return songsPager;
+    } else {
+        const radiosPager = new SimpleMediaPager(async () => {
             const id = getMediaObjectId(item);
             const radio = createRadioStation({
                 src: `${serviceId}:song-radio:${id}`,
                 title: `${item.title} - Radio`,
                 thumbnails: item.thumbnails,
             });
-            return [item, radio];
+            return [radio];
         });
-    } else {
-        return new SimpleMediaPager(async () => [item]);
+        const audiosPager = new WrappedPager(undefined, songsPager, radiosPager);
+        const artistLink = item.links?.artists?.[0];
+        if (artistLink) {
+            const videosPager = new SimpleMediaPager<MediaItem>(async () => {
+                const [, , artistId] = artistLink.split(':');
+                const artistVideosPager = new PlexPager<MediaItem>({
+                    path: `/library/metadata/${artistId}/extras`,
+                });
+                const artistVideos = await fetchFirstPage(artistVideosPager);
+                const lookupItemsMap = new Map<MediaItem | null, MediaItem>(
+                    artistVideos.map((video) => [createLookupFromTitle(video.title), video])
+                );
+                const lookupVideos = [...lookupItemsMap.keys()].filter(exists);
+                const matches = findMatches(lookupVideos, item);
+                return matches.map((lookup) => lookupItemsMap.get(lookup)!);
+            });
+            return new WrappedPager(undefined, audiosPager, videosPager);
+        } else {
+            return audiosPager;
+        }
     }
 }
 
@@ -266,12 +289,14 @@ async function addMetadata<T extends MediaObject>(item: T): Promise<T> {
 }
 
 async function getMediaObject<T extends MediaObject>(src: string): Promise<T> {
-    const [, , ratingKey] = src.split(':');
-    const pager = new PlexPager<T>(
-        {path: `/library/metadata/${ratingKey}`},
-        {pageSize: 1, maxSize: 1}
-    );
-    return fetchFirstItem<T>(pager, {timeout: 2000});
+    const [, type, ratingKey] = src.split(':');
+    const [object] = await plexApi.getMetadata([ratingKey]);
+    if (type === 'track') {
+        const [album] = await getMediaAlbums([object]);
+        return createMediaObject<MediaItem>(object, album) as T;
+    } else {
+        return createMediaObject<T>(object);
+    }
 }
 
 function getPlayableUrl(item: MediaItem): string {

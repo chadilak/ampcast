@@ -13,7 +13,7 @@ import MediaServiceId from 'types/MediaServiceId';
 import MediaSource, {AnyMediaSource, MediaMultiSource, MediaSourceItems} from 'types/MediaSource';
 import Pager from 'types/Pager';
 import Pin, {Pinnable} from 'types/Pin';
-import {getItemTypeFromSrc} from 'utils';
+import {getItemTypeFromSrc, getMediaObjectId} from 'utils';
 import {t} from 'services/i18n';
 import {createSingularMediaSource} from 'services/mediaServices/mediaSources';
 import SimplePager from 'services/pagers/SimplePager';
@@ -44,7 +44,7 @@ import {
 
 const serviceId: MediaServiceId = 'navidrome';
 
-export const navidromePlaylistLayout: Partial<MediaListLayout> = {
+export const navidromePlaylistsLayout: Partial<MediaListLayout> = {
     card: {
         h1: 'Name',
         h2: 'Description',
@@ -85,7 +85,7 @@ export function createSourceFromObject<T extends MediaObject>(src: string): Medi
                 src,
                 itemType,
                 primaryItems: {
-                    layout: navidromePlaylistLayout,
+                    layout: navidromePlaylistsLayout,
                 },
                 secondaryItems: navidromePlaylistItems,
                 childSort: navidromePlaylistItemsSort.defaultSort,
@@ -106,12 +106,47 @@ export function createSourceFromPin<T extends Pinnable>(pin: Pin): MediaSource<T
         itemType: ItemType.Playlist,
         isPin: true,
         primaryItems: {
-            layout: navidromePlaylistLayout,
+            layout: navidromePlaylistsLayout,
         },
         secondaryItems: navidromePlaylistItems,
         childSort: navidromePlaylistItemsSort.defaultSort,
         createChildPager: createPlaylistItemsPager,
     }) as MediaSource<T>;
+}
+
+export function createRelatedPlaylistsSource<T extends MediaObject>(
+    item: T
+): MediaSource<MediaPlaylist> | undefined {
+    switch (item.itemType) {
+        case ItemType.Media: {
+            const id = `${item.src}/related-playlists`;
+            const songId = getMediaObjectId(item);
+            return {
+                id,
+                sourceId: `${serviceId}/playlists`,
+                title: 'Related Playlists',
+                icon: 'playlist',
+                itemType: ItemType.Playlist,
+                primaryItems: {
+                    layout: navidromePlaylistsLayout,
+                },
+                secondaryItems: navidromePlaylistItems,
+
+                search(): Pager<MediaPlaylist> {
+                    return new NavidromeIndexedPager(
+                        ItemType.Playlist,
+                        `song/${songId}/playlists`,
+                        undefined,
+                        {
+                            childSort: navidromePlaylistItemsSort.defaultSort,
+                            childSortId: `${id}/2`,
+                        },
+                        createPlaylistItemsPager
+                    );
+                },
+            };
+        }
+    }
 }
 
 export const navidromeSearch: MediaMultiSource = {
@@ -189,7 +224,7 @@ export const navidromeSearch: MediaMultiSource = {
                 id: 'playlists',
                 title: 'Playlists',
                 primaryItems: {
-                    layout: navidromePlaylistLayout,
+                    layout: navidromePlaylistsLayout,
                     sort: {
                         sortOptions: {
                             Name: 'Name',
@@ -461,7 +496,7 @@ export const navidromePlaylists: MediaSource<MediaPlaylist> = {
     icon: 'playlist',
     itemType: ItemType.Playlist,
     primaryItems: {
-        layout: navidromePlaylistLayout,
+        layout: navidromePlaylistsLayout,
         sort: {
             sortOptions: {
                 Name: 'Name',

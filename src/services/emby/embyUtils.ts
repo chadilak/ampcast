@@ -16,12 +16,14 @@ import ParentOf from 'types/ParentOf';
 import PlaybackType from 'types/PlaybackType';
 import SortParams from 'types/SortParams';
 import Thumbnail from 'types/Thumbnail';
-import {getMediaObjectId} from 'utils';
+import {exists, getMediaObjectId, Logger} from 'utils';
 import {MAX_DURATION} from 'services/constants';
-import stationStore from 'services/internetRadio/stationStore';
-import SimplePager from 'services/pagers/SimplePager';
-import WrappedPager from 'services/pagers/WrappedPager';
+import fetchFirstPage from 'services/pagers/fetchFirstPage';
 import pinStore from 'services/pins/pinStore';
+import SimpleMediaPager from 'services/pagers/SimpleMediaPager';
+import SimplePager from 'services/pagers/SimplePager';
+import stationStore from 'services/internetRadio/stationStore';
+import WrappedPager from 'services/pagers/WrappedPager';
 import EmbyPager, {EmbyPlaylistItemsPager} from './EmbyPager';
 import embySettings from './embySettings';
 import {
@@ -30,6 +32,8 @@ import {
     embyPlaylistItemsSort,
     getSortParams,
 } from './embySorting';
+
+const logger = new Logger('embyUtils');
 
 const serviceId: MediaServiceId = 'emby';
 
@@ -54,6 +58,22 @@ export function createMediaObject<T extends MediaObject>(
             default:
                 return createMediaItem(item) as T;
         }
+    }
+}
+
+export function createRelatedItemsPager<T extends MediaObject>(item: T): Pager<T> | undefined {
+    const id = getMediaObjectId(item);
+    switch (item.itemType) {
+        case ItemType.Artist:
+            return new EmbyPager(`Items/${id}/Similar`, {
+                UserId: embySettings.userId,
+            }) as Pager<T>;
+
+        case ItemType.Album:
+            return new EmbyPager(`Items/${id}/Similar`, {
+                ExcludeArtistIds: getMediaObjectId({src: item.links?.artists?.[0] || ''}),
+                UserId: embySettings.userId,
+            }) as Pager<T>;
     }
 }
 
@@ -192,17 +212,12 @@ function createMediaItem(track: BaseItemDto): MediaItem {
                   : undefined
             : track.Container || undefined,
         container: track.Container || undefined,
-        links: isVideo
-            ? undefined
-            : {
-                  self: true,
-                  album:
-                      track.Album && track.AlbumId
-                          ? `${serviceId}:album:${track.AlbumId}`
-                          : undefined,
-                  albumArtists: albumArtists?.map((artist) => getArtistLink(artist)),
-                  artists: artists?.map((artist) => getArtistLink(artist)),
-              },
+        links: {
+            self: true,
+            album: track.Album && track.AlbumId ? `${serviceId}:album:${track.AlbumId}` : undefined,
+            albumArtists: albumArtists?.map((artist) => getArtistLink(artist)),
+            artists: artists?.map((artist) => getArtistLink(artist)),
+        },
     };
 }
 
@@ -238,11 +253,31 @@ export function createArtistAlbumsPager(
     if (artist.title === 'Various Artists') {
         return albumsPager;
     }
+    const createSyntheticAlbums = (...albums: MediaAlbum[]) =>
+        new SimpleMediaPager<MediaAlbum>(async () => {
+            const result = await Promise.all<MediaAlbum | undefined>(
+                albums.map(async (album) => {
+                    try {
+                        const items = await fetchFirstPage(album.pager, {keepAlive: true});
+                        if (items.length === 0) {
+                            album.pager.disconnect();
+                        } else {
+                            return album;
+                        }
+                    } catch (err) {
+                        logger.error(err);
+                        album.pager.disconnect();
+                    }
+                })
+            );
+            return result.filter(exists);
+        });
     const allTracks = createArtistAllTracks(artist);
     const allTracksPager = new SimplePager<MediaAlbum>([allTracks]);
     const radios = createArtistRadios(artist);
-    const radiosPager = new SimplePager<MediaAlbum>([radios]);
-    return new WrappedPager(radiosPager, albumsPager, allTracksPager);
+    const videos = createArtistVideos(artist);
+    const topPager = createSyntheticAlbums(videos, radios);
+    return new WrappedPager(topPager, albumsPager, allTracksPager);
 }
 
 function createArtistAllTracks(artist: MediaArtist): MediaAlbum {
@@ -272,6 +307,32 @@ function createAllTracksPager(artist: MediaArtist): Pager<MediaItem> {
         },
         {autofill: true}
     );
+}
+
+function createArtistVideos(artist: MediaArtist): MediaAlbum {
+    const artistId = getMediaObjectId(artist);
+    return {
+        itemType: ItemType.Album,
+        src: `${serviceId}:videos:${artistId}`,
+        title: 'Music Videos',
+        artists: [artist.title],
+        thumbnails: artist.thumbnails,
+        pager: createArtistVideosPager(artistId),
+        trackCount: undefined,
+        synthetic: true,
+        links: {
+            artists: [artist.src],
+        },
+    };
+}
+
+export function createArtistVideosPager(artistId: string): Pager<MediaItem> {
+    return new EmbyPager(`Users/${embySettings.userId}/Items`, {
+        IncludeItemTypes: 'MusicVideo',
+        ArtistIds: artistId,
+        SortBy: 'ProductionYear,PremiereDate,SortName',
+        SortOrder: 'Descending,Descending,Ascending',
+    });
 }
 
 function createArtistRadios(artist: MediaArtist): MediaAlbum {

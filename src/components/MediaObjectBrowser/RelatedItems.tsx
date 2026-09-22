@@ -6,7 +6,7 @@ import useFirstValue from 'hooks/useFirstValue';
 
 export default function RelatedItems<T extends MediaObject>({
     source,
-    emptyMessage = 'Nothing found',
+    emptyMessage = 'Nothing found.',
     ...props
 }: Except<PagedItemsProps<T>, 'pager'>) {
     const pager = useFirstValue(source.search());

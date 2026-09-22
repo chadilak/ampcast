@@ -86,7 +86,8 @@ export function createRelatedPlaylistsSource<T extends MediaObject>(
     switch (item.itemType) {
         case ItemType.Artist:
             return {
-                id: `${serviceId}/playlists`,
+                id: `${item.src}/playlists`,
+                sourceId: `${serviceId}/playlists`,
                 title: 'Related Playlists',
                 icon: 'playlist',
                 itemType: ItemType.Playlist,

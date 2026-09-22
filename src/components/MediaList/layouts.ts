@@ -111,9 +111,10 @@ export const videosLayout: MediaListLayout = {
     card: {
         h1: 'Title',
         h2: 'Artist',
+        h3: 'Album',
         data: 'Duration',
     },
-    details: ['Title', 'Artist', 'Duration'],
+    details: ['Title', 'Artist', 'Album', 'Duration'],
     extraFields: allMediaItemFields,
 };
 

@@ -49,7 +49,7 @@ const ibroadcastArtistAlbumsSort: MediaListSort = {
     },
 };
 
-export const ibroadcastPlaylistLayout: Partial<MediaListLayout> = {
+export const ibroadcastPlaylistsLayout: Partial<MediaListLayout> = {
     card: {
         h1: 'Name',
         h2: 'Genre',
@@ -101,7 +101,7 @@ export function createSourceFromObject<T extends MediaObject>(src: string): Medi
                 src,
                 itemType,
                 primaryItems: {
-                    layout: ibroadcastPlaylistLayout,
+                    layout: ibroadcastPlaylistsLayout,
                 },
                 secondaryItems: ibroadcastPlaylistItems,
                 childSort: ibroadcastPlaylistItemsSort.defaultSort,
@@ -122,7 +122,7 @@ export function createSourceFromPin<T extends Pinnable>(pin: Pin): MediaSource<T
         itemType: ItemType.Playlist,
         isPin: true,
         primaryItems: {
-            layout: ibroadcastPlaylistLayout,
+            layout: ibroadcastPlaylistsLayout,
         },
         secondaryItems: ibroadcastPlaylistItems,
         childSort: ibroadcastPlaylistItemsSort.defaultSort,
@@ -133,25 +133,37 @@ export function createSourceFromPin<T extends Pinnable>(pin: Pin): MediaSource<T
 export function createRelatedPlaylistsSource<T extends MediaObject>(
     item: T
 ): MediaSource<MediaPlaylist> | undefined {
-    const id = getIdFromSrc(item);
     switch (item.itemType) {
-        case ItemType.Media:
-            {
-                const playlists = ibroadcastLibrary.getRelatedPlaylistsSync(id);
-                if (playlists.length > 0) {
-                    return {
-                        id: `${serviceId}/playlists`,
-                        title: 'Related Playlists',
-                        icon: 'playlist',
-                        itemType: ItemType.Playlist,
+        case ItemType.Media: {
+            const trackId = getIdFromSrc(item);
+            const playlists = ibroadcastLibrary.getRelatedPlaylistsSync(trackId);
+            if (playlists.length > 0) {
+                const id = `${item.src}/playlists`;
+                return {
+                    id,
+                    sourceId: `${serviceId}/playlists`,
+                    title: 'Related Playlists',
+                    icon: 'playlist',
+                    itemType: ItemType.Playlist,
+                    primaryItems: {
+                        layout: ibroadcastPlaylistsLayout,
+                    },
+                    secondaryItems: ibroadcastPlaylistItems,
 
-                        search(): Pager<MediaPlaylist> {
-                            return new IBroadcastPager('playlists', async () => playlists);
-                        },
-                    };
-                }
+                    search(): Pager<MediaPlaylist> {
+                        return new IBroadcastPager(
+                            'playlists',
+                            async () => playlists,
+                            {
+                                childSort: ibroadcastPlaylistItemsSort.defaultSort,
+                                childSortId: `${id}/2`,
+                            },
+                            createPlaylistItemsPager
+                        );
+                    },
+                };
             }
-            break;
+        }
     }
 }
 
@@ -183,7 +195,7 @@ export const ibroadcastSearch: MediaMultiSource = {
         createSearch<MediaPlaylist>(ItemType.Playlist, {
             id: 'playlists',
             title: 'Playlists',
-            primaryItems: {layout: ibroadcastPlaylistLayout},
+            primaryItems: {layout: ibroadcastPlaylistsLayout},
             secondaryItems: ibroadcastPlaylistItems,
         }),
     ],
@@ -328,7 +340,7 @@ export const ibroadcastPlaylists: MediaSource<MediaPlaylist> = {
     icon: 'playlist',
     itemType: ItemType.Playlist,
     primaryItems: {
-        layout: ibroadcastPlaylistLayout,
+        layout: ibroadcastPlaylistsLayout,
         sort: {
             sortOptions: {
                 Name: 'Name',
