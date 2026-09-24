@@ -1,0 +1,28 @@
+import React, {useCallback} from 'react';
+import MediaObject from 'types/MediaObject';
+import {srcToPath} from 'utils';
+import {WEB_LINKS} from 'services/features';
+import {getServiceFromSrc} from 'services/mediaServices';
+import Button from 'components/Button';
+import useHistory from 'components/MediaBrowser/useHistory';
+
+export interface NavigationButtonProps {
+    item: MediaObject;
+}
+
+export default function NavigationButton({item}: NavigationButtonProps) {
+    const {navigateTo} = useHistory();
+    const path = srcToPath(item.src);
+    const service = getServiceFromSrc(item);
+    const canNavigate = service?.browsable;
+
+    const showInBrowser = useCallback(() => {
+        navigateTo(path);
+    }, [navigateTo, path]);
+
+    return WEB_LINKS && canNavigate ? (
+        <Button className="navigation-button" onClick={showInBrowser}>
+            Go to…
+        </Button>
+    ) : null;
+}

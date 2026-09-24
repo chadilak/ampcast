@@ -4,8 +4,7 @@ import {IconButton, IconButtons} from 'components/Button';
 import useHistory from './useHistory';
 
 export default function BrowserControls() {
-    const {stack, currentKey, back, forward, refresh} = useHistory();
-    const currentIndex = stack.findIndex((entry) => entry.key === currentKey);
+    const {stack, currentIndex, back, forward, refresh} = useHistory();
     const [refreshing, setRefreshing] = useState(false);
 
     const handleRefresh = useCallback(async () => {
@@ -22,14 +21,14 @@ export default function BrowserControls() {
                 icon="back"
                 onClick={back}
                 title="Back"
-                disabled={currentIndex === stack.length - 1}
+                disabled={currentIndex <= 0}
             />
             <IconButton
                 className="forward"
                 icon="forward"
                 title="Forward"
                 onClick={forward}
-                disabled={currentIndex <= 0}
+                disabled={currentIndex === stack.length - 1}
             />
             <IconButton
                 className="refresh"

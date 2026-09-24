@@ -48,6 +48,7 @@ const ibroadcast: PersonalMediaService = {
     url: 'https://ibroadcast.com/',
     host: 'https://media.ibroadcast.com',
     serviceType: ServiceType.PersonalMedia,
+    browsable: true,
     Components: {Credentials, Login, ServerSettings},
     internetRequired: true,
     secureContextRequired: true,

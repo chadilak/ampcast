@@ -57,6 +57,7 @@ const navidrome: PersonalMediaService = {
     name: 'Navidrome',
     url: 'https://www.navidrome.org',
     serviceType: ServiceType.PersonalMedia,
+    browsable: true,
     root: navidromeSearch,
     sources: navidromeSources,
     labels: {

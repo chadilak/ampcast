@@ -10,22 +10,32 @@ export interface InternalLinkProps {
 }
 
 export default function InternalLink({path, className, children}: InternalLinkProps) {
-    const {currentPath, navigateTo} = useHistory();
+    const {currentPath} = useHistory();
+
+    return !WEB_LINKS || isSamePath(path, currentPath) ? (
+        <span className={className}>{children}</span>
+    ) : (
+        <ActiveInternalLink className={className} path={path}>
+            {children}
+        </ActiveInternalLink>
+    );
+}
+
+function ActiveInternalLink({path, className, children}: InternalLinkProps) {
+    const {navigateTo} = useHistory();
 
     const handleClick = useCallback(() => {
         navigateTo(path);
     }, [navigateTo, path]);
 
-    const handleMouseDown = useCallback((event:React.MouseEvent) => {
+    const handleMouseDown = useCallback((event: React.MouseEvent) => {
         if (event.button === 0) {
             event.preventDefault();
             event.stopPropagation();
         }
     }, []);
 
-    return !WEB_LINKS || isSamePath(path, currentPath) ? (
-        <span className={className}>{children}</span>
-    ) : (
+    return (
         <a
             className={`internal-link ${className || ''}`}
             href={`#!/${path}`}

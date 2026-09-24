@@ -1,7 +1,7 @@
 import React, {useMemo, useState} from 'react';
+import MediaAlbum from 'types/MediaAlbum';
 import {ShowActionsMenuContext, showActionsMenu} from 'components/Actions';
 import SyntheticAlbumContext from 'components/Actions/SyntheticAlbumContext';
-import MediaAlbum from 'types/MediaAlbum';
 
 export interface BrowserContextsProps {
     children: React.ReactNode;

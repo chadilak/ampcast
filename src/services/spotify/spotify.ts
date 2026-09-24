@@ -50,6 +50,7 @@ const spotify: PublicMediaService = {
     url: 'https://www.spotify.com',
     credentialsUrl: 'https://developer.spotify.com/dashboard',
     serviceType: ServiceType.PublicMedia,
+    browsable: true,
     Components: {Credentials, Login},
     lyricsDisabled: true,
     internetRequired: true,

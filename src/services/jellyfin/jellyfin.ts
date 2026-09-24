@@ -58,6 +58,7 @@ const jellyfin: PersonalMediaService = {
     name: 'Jellyfin',
     url: 'https://jellyfin.org',
     serviceType: ServiceType.PersonalMedia,
+    browsable: true,
     root: jellyfinSearch,
     sources: jellyfinSources,
     labels: {

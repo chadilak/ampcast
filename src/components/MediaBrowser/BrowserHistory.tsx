@@ -6,7 +6,7 @@ export default function BrowserHistory() {
 
     return (
         <div className="browser-history">
-            {stack.map((item) => (
+            {stack.reverse().map((item) => (
                 <div
                     className="history-item"
                     data-key={item.key}

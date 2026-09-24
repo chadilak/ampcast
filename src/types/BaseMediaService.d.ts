@@ -24,6 +24,7 @@ type BaseMediaService = Auth & {
     readonly url: string;
     compareForRating: <T extends MediaObject>(a: T, b: T) => boolean; // TODO: Make optional.
     // Everything below here should be optional.
+    readonly browsable?: boolean;
     readonly root?: AnyMediaSource;
     readonly sources?: readonly AnyMediaSource[];
     readonly listingName?: string; // Longer name for disambiguation

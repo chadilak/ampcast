@@ -3,7 +3,7 @@ import {BehaviorSubject, fromEvent, map} from 'rxjs';
 import {nanoid} from 'nanoid';
 import MediaSource, {AnyMediaSource} from 'types/MediaSource';
 import {Pinnable} from 'types/Pin';
-import {Logger} from 'utils';
+import {LiteStorage, Logger} from 'utils';
 import {WEB_LINKS} from 'services/features';
 import {getServiceFromPath, isPersonalMediaService} from 'services/mediaServices';
 import pinStore from 'services/pins/pinStore';
@@ -19,13 +19,14 @@ export interface HistoryEntry {
 export type HistoryState = {
     readonly key: string;
     readonly path: string;
+    readonly index: number;
 };
-
-const MAX_SIZE = 50;
 
 const logger = new Logger('history');
 
-const stack$ = new BehaviorSubject<HistoryEntry[]>([]);
+const storage = new LiteStorage('history', 'session');
+
+const stack$ = new BehaviorSubject<HistoryEntry[]>(Array(storage.getNumber('length')));
 const state$ = new BehaviorSubject<HistoryState | null>(null);
 
 const observeStack = () => stack$;
@@ -38,14 +39,15 @@ if (WEB_LINKS) {
 
     state$.subscribe((state) => {
         if (state) {
-            const {key, path} = state;
-            const historyItem = stack$.value.find((entry) => entry.key === key);
+            const {key, path, index} = state;
+            const historyItem = stack$.value.find((entry) => entry?.key === key);
             if (!historyItem) {
                 const entry = createHistoryEntry(key, path);
                 const stack = stack$.value.slice();
-                stack.unshift(entry);
-                stack$.next(stack.slice(0, MAX_SIZE));
+                stack[index] = entry;
+                stack$.next(stack);
             }
+            storage.setNumber('index', state.index);
         }
     });
 }
@@ -53,8 +55,6 @@ if (WEB_LINKS) {
 export default function useHistory() {
     const stack = useObservable(observeStack, stack$.value);
     const state = useObservable(observeState, state$.value);
-    const currentKey = state?.key || '';
-    const currentPath = state?.path || '';
 
     const back = useCallback(() => {
         history.back();
@@ -64,49 +64,50 @@ export default function useHistory() {
         history.forward();
     }, []);
 
+    const expire = useCallback((key: string) => {
+        const stack = stack$.value.slice();
+        const index = stack.findIndex((entry) => entry?.key === key);
+        if (index !== -1) {
+            delete stack[index];
+            stack$.next(stack);
+        }
+    }, []);
+
     const refresh = useCallback(() => {
         const state = state$.value;
         if (state) {
-            const currentKey = state.key;
             const stack = stack$.value.slice();
-            const index = stack.findIndex((entry) => entry.key === currentKey);
-            if (index !== -1) {
-                const key = nanoid(); // New `key`.
-                const path = state.path;
-                stack[index] = createHistoryEntry(key, path);
-                stack$.next(stack);
-                if (WEB_LINKS) {
-                    history.replaceState({...state, key}, '', `#!/${path}`);
-                }
-                state$.next({...state, key});
+            const {path, index} = state;
+            const key = nanoid(); // New `key`.
+            stack[index] = createHistoryEntry(key, path);
+            stack$.next(stack);
+            if (WEB_LINKS) {
+                history.replaceState({...state, key}, '', `#!/${path}`);
             }
+            state$.next({...state, key});
         }
     }, []);
 
     const switchLibrary = useCallback((libraryId: string) => {
         const state = state$.value;
         if (state && getMediaSource(state.path)) {
-            const currentKey = state.key;
             const stack = stack$.value.slice();
-            const index = stack.findIndex((entry) => entry.key === currentKey);
-            if (index !== -1) {
-                const key = nanoid(); // New `key`.
-                const [pathname, search] = state.path.split('?');
-                let path = pathname;
-                if (search) {
-                    const params = new URLSearchParams(search);
-                    if (params.has('libraryId')) {
-                        params.set('libraryId', libraryId);
-                    }
-                    path = `${pathname}?${params}`;
+            const key = nanoid(); // New `key`.
+            const [pathname, search] = state.path.split('?');
+            let path = pathname;
+            if (search) {
+                const params = new URLSearchParams(search);
+                if (params.has('libraryId')) {
+                    params.set('libraryId', libraryId);
                 }
-                stack[index] = createHistoryEntry(key, path);
-                stack$.next(stack);
-                if (WEB_LINKS) {
-                    history.replaceState({...state, key}, '', `#!/${path}`);
-                }
-                state$.next({...state, key});
+                path = `${pathname}?${params}`;
             }
+            stack[state.index] = createHistoryEntry(key, path);
+            stack$.next(stack);
+            if (WEB_LINKS) {
+                history.replaceState({...state, key}, '', `#!/${path}`);
+            }
+            state$.next({...state, key});
         }
     }, []);
 
@@ -129,30 +130,42 @@ export default function useHistory() {
         if (path !== state$.value?.path) {
             logger.log('navigateTo', path);
             const key = nanoid();
-            const state = {key, path};
+            const index = WEB_LINKS
+                ? initialized
+                    ? state$.value.index + 1
+                    : storage.getNumber('index')
+                : 0;
+            const stack = stack$.value.slice();
+            const state: HistoryState = {key, path, index};
             const entry = createHistoryEntry(key, path);
+            stack[index] = entry;
+            stack.length = WEB_LINKS
+                ? initialized
+                    ? index + 1
+                    : Math.max(stack.length, index + 1)
+                : 1;
+            stack$.next(stack);
             if (WEB_LINKS) {
-                const currentKey = state$.value?.key;
-                const stack = stack$.value;
-                const index = stack.findIndex((entry) => entry.key === currentKey);
-                stack$.next([entry, ...stack.slice(0, index + 1)].slice(0, MAX_SIZE));
+                const hash = `#!/${path}`;
                 if (initialized) {
-                    history.pushState(state, '', `#!/${path}`);
+                    history.pushState(state, '', hash);
                 } else {
-                    history.replaceState(state, '', `#!/${path}`);
+                    history.replaceState(state, '', hash);
                 }
-            } else {
-                stack$.next([entry]);
             }
             state$.next(state);
+            storage.setNumber('length', stack.length);
+            storage.setNumber('index', state.index);
         }
     }, []);
 
     return {
-        currentKey,
-        currentPath,
+        currentIndex: state?.index ?? -1,
+        currentKey: state?.key || '',
+        currentPath: state?.path || '',
         stack,
         back,
+        expire,
         forward,
         navigateTo,
         refresh,

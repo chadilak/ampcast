@@ -31,9 +31,9 @@ export interface ColumnSpec<T> {
     readonly render: (
         item: T,
         info: {
-            view: ListViewLayout<T>['view'];
-            rowIndex: number;
-            busy: boolean; // Scrolling
+            readonly view: ListViewLayout<T>['view'];
+            readonly rowIndex: number;
+            readonly busy: boolean; // Scrolling
         }
     ) => React.ReactNode;
     readonly onContextMenu?: (event: React.MouseEvent) => void;

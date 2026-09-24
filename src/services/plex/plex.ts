@@ -58,6 +58,7 @@ const plex: PersonalMediaService = {
     icon: serviceId,
     url: 'https://www.plex.tv',
     serviceType: ServiceType.PersonalMedia,
+    browsable: true,
     Components: {ServerSettings},
     get internetRequired() {
         return plexSettings.internetRequired;
@@ -226,7 +227,9 @@ function createSongsPager(item: MediaItem): Pager<MediaItem> {
             });
             return [radio];
         });
-        const audiosPager = new WrappedPager(undefined, songsPager, radiosPager);
+        const audiosPager = plexSettings.sonicAnalysis
+            ? new WrappedPager(undefined, songsPager, radiosPager)
+            : songsPager;
         const artistLink = item.links?.artists?.[0];
         if (artistLink) {
             const videosPager = new SimpleMediaPager<MediaItem>(async () => {

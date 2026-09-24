@@ -58,6 +58,7 @@ const emby: PersonalMediaService = {
     name: 'Emby',
     url: 'https://emby.media',
     serviceType: ServiceType.PersonalMedia,
+    browsable: true,
     root: embySearch,
     sources: embySources,
     labels: {

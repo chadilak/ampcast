@@ -74,6 +74,7 @@ export default class SubsonicService implements PersonalMediaService {
     readonly utils: SubsonicUtils;
     readonly logger: Logger;
     readonly serviceType = ServiceType.PersonalMedia;
+    readonly browsable = true;
     readonly id: PersonalMediaServiceId;
     readonly icon: PersonalMediaServiceId;
     readonly name: string;

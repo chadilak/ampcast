@@ -7,10 +7,12 @@ import Dialog, {DialogProps, showDialog} from 'components/Dialog';
 import useFirstValue from 'hooks/useFirstValue';
 import MediaInfo from './MediaInfo';
 import MediaInfoTabs from './MediaInfoTabs';
+import NavigationButton from './NavigationButton';
 import useMediaInfoDialog from './useMediaInfoDialog';
 import './MediaInfoDialog.scss';
 
 export interface MediaInfoDialogOptions {
+    allowNavigation?: boolean;
     scrobblingOptions?: boolean;
 }
 
@@ -29,6 +31,7 @@ export async function showMediaInfoDialog<T extends MediaObject>(
 
 export default function MediaInfoDialog<T extends MediaObject>({
     item,
+    allowNavigation,
     scrobblingOptions,
     ...props
 }: MediaInfoDialogProps<T>) {
@@ -46,6 +49,7 @@ export default function MediaInfoDialog<T extends MediaObject>({
                     <MediaInfo item={initialItem} scrobblingOptions={scrobblingOptions} />
                 )}
                 <footer className="dialog-buttons">
+                    {allowNavigation ? <NavigationButton item={initialItem} /> : null}
                     <Button>Close</Button>
                 </footer>
             </form>

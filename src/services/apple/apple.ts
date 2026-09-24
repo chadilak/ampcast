@@ -59,6 +59,7 @@ const apple: PublicMediaService = {
     url: 'https://music.apple.com',
     credentialsUrl: 'https://developer.apple.com',
     serviceType: ServiceType.PublicMedia,
+    browsable: true,
     internetRequired: true,
     Components: {Credentials, Login, StreamingSettings},
     get credentialsLocked(): boolean {
