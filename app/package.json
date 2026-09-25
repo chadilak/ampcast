@@ -82,6 +82,7 @@
             "target": [
                 "AppImage",
                 "deb",
+                "rpm",
                 "tar.xz"
             ],
             "icon": "assets/icons/ampcast.png",
