@@ -31,8 +31,8 @@
         user-select: none;
 
         &:focus {
-            background-color: contrast-color(var(--button-color));
-            color: contrast-color(contrast-color(var(--button-color)));
+            background-color: var(--selected-color);
+            color: var(--selected-text-color);
 
             .focus-visible & {
                 outline: none;
@@ -104,8 +104,8 @@
         }
 
         &.showing-popup > button {
-            background-color: contrast-color(var(--button-color));
-            color: contrast-color(contrast-color(var(--button-color)));
+            background-color: var(--selected-color);
+            color: var(--selected-text-color);
         }
 
         &-label {
