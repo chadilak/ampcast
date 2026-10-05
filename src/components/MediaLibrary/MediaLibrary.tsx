@@ -63,7 +63,7 @@ export default memo(function MediaLibrary() {
             <header className="media-library-head">
                 {showAppTitle && <AppTitle />}
                 <AppDragRegion />
-                <BrowserControls />
+                {showAppTitle && <BrowserControls />}
             </header>
             {showAppTitle && <WindowControls />}
             <div className="media-library-body">
